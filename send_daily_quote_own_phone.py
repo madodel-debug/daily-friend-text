@@ -129,8 +129,8 @@ MESSAGES_WORK = [
 ]
 
 MESSAGES_KIDS = [
-    "miss mo na sila no? ako rin miss ko kayong lahat.",
-    "nandiyan lang sila sa puso mo palagi.",
+    "miss mo na mga bata? ako rin miss ko kayong lahat.",
+    "nandiyan lang ang mga bata sa puso mo palagi.",
     "videocall mo mga bata mamaya ha.",
     "ang mga bata swerte sa'yo, ikaw pinakamagandang mama.",
     "palapit nang palapit tayo sa pagsasama ulit, kapit lang.",
