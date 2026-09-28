@@ -2,7 +2,12 @@ name: Daily SMS from My Phone
 on:
   schedule:
     - cron: '0 0 * * *'   # 8:00 AM PH time (midnight UTC)
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      test_date:
+        description: 'Optional: pretend today is this date (MM-DD) to test birthdays'
+        required: false
+        default: ''
 jobs:
   send:
     runs-on: ubuntu-latest
@@ -17,3 +22,5 @@ jobs:
           SMSGATEWAY_LOGIN: ${{ secrets.SMSGATEWAY_LOGIN }}
           SMSGATEWAY_PASSWORD: ${{ secrets.SMSGATEWAY_PASSWORD }}
           RECIPIENT_PHONE_NUMBER: ${{ secrets.RECIPIENT_PHONE_NUMBER }}
+          BIRTHDAYS: ${{ secrets.BIRTHDAYS }}
+          TEST_DATE: ${{ github.event.inputs.test_date }}
