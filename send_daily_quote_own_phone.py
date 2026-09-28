@@ -71,7 +71,7 @@ MESSAGES_KIDS = [
 
 # --- Category 3: Husband's appreciation of his wife ---
 MESSAGES_MOM = [
-    "good morning mahal! sobrang proud ako sa'yo, mom of 2, nagwoworkout, nag-aalaga pa. superhero ka",
+    "good morning mahal! sobrang proud ako sa'yo, nagwoworkout, nag-aalaga pa. superhero ka",
     "magandang umaga hon! hindi ko alam paano mo nagagawa lahat, pero ginagawa mo. amazing ka",
     "good morning babe! alam kong pagod ka, pero hindi mo ipinapakita. mahal na mahal kita",
     "magandang umaga mahal! ikaw ang pinakamalakas na taong kilala ko, at asawa kita, swerte ko",
