@@ -1,7 +1,7 @@
 name: Daily SMS from My Phone
 on:
   schedule:
-    - cron: '0 0 * * *'   # 8:00 AM PH time (midnight UTC)
+    - cron: '30 21 * * *'   # 5:30 AM PH time (21:30 UTC previous day)
   workflow_dispatch:
     inputs:
       test_date:
