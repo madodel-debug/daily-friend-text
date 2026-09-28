@@ -1,21 +1,15 @@
 """
-send_daily_quote_own_phone.py
+send_daily_goodmorning_sms.py
 
-Sends one random casual message per day as a real SMS from YOUR OWN phone
-number, using the "SMS Gateway for Android" app as the sending mechanism.
-Your phone's SIM does the actual sending — this script just tells it to.
+Sends one random good-morning message per day at 8AM (Manila time) as a real
+SMS from YOUR OWN phone number, using the "SMS Gateway for Android" app.
 
-SETUP (see SETUP_OWN_PHONE.md for full walkthrough):
-  1. Install "SMS Gateway for Android" from the Play Store on the phone
-     whose number you want to send from.
-  2. In the app, enable Cloud Server mode and sign in / register — this
-     gives you an API login + password AND lets this script reach your
-     phone from anywhere (not just your home wifi).
+SETUP:
+  1. Install "SMS Gateway for Android" from the Play Store.
+  2. Enable Cloud Server mode and sign in / register for API login + password.
   3. pip install requests
   4. Set the environment variables below.
-  5. Run once manually to test: python send_daily_quote_own_phone.py
-  6. Schedule it (cron / Task Scheduler / GitHub Actions) — your phone
-     just needs internet access (wifi or mobile data) at send time.
+  5. Schedule it to run at 8AM Manila time (cron: 0 0 * * * UTC = 8AM PHT).
 """
 
 import os
@@ -25,128 +19,153 @@ from datetime import datetime, timedelta, timezone
 import requests
 from requests.auth import HTTPBasicAuth
 
-# ---- Config: pull from environment variables ----
+# ---- Config ----
 SMSGATEWAY_LOGIN = os.environ.get("SMSGATEWAY_LOGIN")
 SMSGATEWAY_PASSWORD = os.environ.get("SMSGATEWAY_PASSWORD")
-RECIPIENT_PHONE_NUMBER = os.environ.get("RECIPIENT_PHONE_NUMBER")  # one or more numbers, separated by commas, e.g. +639171234567,+639181234567
+RECIPIENT_PHONE_NUMBER = os.environ.get("RECIPIENT_PHONE_NUMBER")
 
 SMSGATEWAY_URL = "https://api.sms-gate.app/3rdparty/v1/messages"
 
-# ---- Birthdays ----
-# The list lives in a GitHub secret called BIRTHDAYS (your repo is public, so
-# numbers must NOT be written in this file). Format, entries separated by ;
-#   MM-DD|+63number|Name        e.g.  03-15|+639171234567|Ana;11-02|+639181234567|Ben
+# ---- Birthdays (optional) ----
 BIRTHDAYS = os.environ.get("BIRTHDAYS", "")
-TEST_DATE = os.environ.get("TEST_DATE", "").strip()   # optional, MM-DD, pretend it's this date
-DRY_RUN = os.environ.get("DRY_RUN", "").strip() == "1"  # optional, print instead of sending
+TEST_DATE = os.environ.get("TEST_DATE", "").strip()
+DRY_RUN = os.environ.get("DRY_RUN", "").strip() == "1"
 
-# {name} is replaced with the person's name. Edit these freely.
 BIRTHDAY_MESSAGES = [
-    "happy birthday {name}!! hope your day is full of good things, you deserve all of it",
-    "hey {name}, happy birthday! thinking of you today and hope it's a great one",
-    "happy birthday {name}! another year of you being awesome, enjoy every bit of today",
-    "{name}!! happy birthday, hope you get spoiled today and eat something really good",
-    "happy birthday {name}, wishing you a day as great as you are",
+    "happy birthday mahal!! sobrang swerte ko sa'yo, I hope today is as beautiful as you are",
+    "uy hon, happy birthday! mahal na mahal kita, enjoy your day ha",
+    "happy birthday babe! isa na namang taon na kasama kita, thank you for everything",
+    "mahal, happy birthday! sana ma-spoil kita today, deserve mo lahat",
+    "happy birthday hon, ikaw pa rin ang pinakamagandang nanay at asawa para sa akin",
 ]
 
-# ---- The messages ----
-MESSAGES = [
-    # --- Love & relationships (casual) ---
-    "ok but have i told you today that you're doing great at this whole loving-people thing",
-    "not to be soft but i hope you know you're worth choosing, every time, not just when it's convenient",
-    "reminder that you don't have to earn love by being easy to deal with 24/7",
-    "hope whoever you love knows how lucky they got fr",
-    "you ever think about how you deserve the same patience you give everyone else? just a thought",
-    "psa: loving yourself counts as loving someone too, don't skip that one",
-    "sending you love today, unprompted, no occasion, just felt like it",
-    "the right person is gonna think your weird little quirks are the best part ngl",
-    "you deserve a love that doesn't feel like homework",
-    "hope you're letting yourself be loved and not just doing all the loving lol",
-    "you're allowed to want calm, boring, easy love. that's not too much to ask",
-    "just remembered how good you are at making people feel safe. wanted to say that",
-    "someone out there is lucky to have you and if it's not obvious to them yet, it will be",
-    "not everyone gets it right but i think you love pretty well, just saying",
-    "you know you're allowed to protect your peace even in relationships you love right",
-    "hope today you feel a little more loved than yesterday",
-    "reminder that your love language probably deserves to be spoken back to you too",
-    "you give really good love honestly. hope it comes back around",
-    "it's ok to miss someone and still be fine. both things can be true",
-    "you don't have to perform being fine for people who actually love you",
+# ---- 8AM Good morning messages (as a husband to his wife) ----
 
-    # --- Check-ins (casual) ---
-    "hey be real with me for a sec, how are you actually doing",
-    "not the fine version, the real version, how's it going today",
-    "just checking in bc you crossed my mind, no pressure to reply",
-    "how's your heart today. weird question ik but i mean it",
-    "hope you drank water today and stepped outside for like 5 minutes minimum",
-    "you've been on my mind lately, everything good over there",
-    "not gonna lie just wanted to make sure you're doing ok this week",
-    "how are you holding up fr fr",
-    "are you resting or are you doing the thing where you say you're resting but you're not",
-    "hey lowkey just wanted to say hi and see how you're feeling today",
-    "you good? and i mean actually good not just 'i'm fine' good",
-    "what's something good that happened today, even small counts",
-    "hope today wasn't too much for you. if it was, that's ok too",
-    "checking in bc i care, that's it, that's the whole text",
-    "hey no big reason just wanted you to know someone's thinking about you rn",
-    "how's the week treating you so far",
-    "are you eating enough today, real talk",
-    "you don't have to have a good answer, i just want to know how you are",
-    "hope you're not being too hard on yourself today",
-    "just a random hi, hope your day's going easy on you",
-
-    # --- Motivational / encouragement (casual voice) ---
-    "you've got this, whatever 'this' is today",
-    "ngl you're handling more than people realize and doing it well",
-    "small steps still count as steps, don't let anyone tell you otherwise",
-    "you don't have to have it all figured out today, one thing at a time",
-    "proud of you for showing up even on the annoying days",
-    "you're doing better than the voice in your head is telling you",
-    "not to be dramatic but you're built different fr",
-    "reminder you're allowed to be proud of the small wins too",
-    "you're not behind, you're just on your own timeline and that's fine",
-    "hope today goes easy on you, and if it doesn't, tomorrow's a reset",
-    "you've survived every hard day so far, 100% track record ngl",
-    "sending good energy your way today no context needed",
-    "you're allowed to rest, it's not the same as giving up",
-    "whatever you're worried about, i think you'll handle it better than you expect",
-    "you keep showing up and that says a lot about you honestly",
-    "it's ok to not be productive every single day, you're still worth something",
-    "you're doing the best you can with what you've got and that's enough",
-    "just a heads up you're more capable than you give yourself credit for",
-    "today doesn't have to be perfect to count",
-    "you're allowed to be a work in progress, most of us are",
-
-    # --- Famous quotes, paraphrased casually (never word-for-word) ---
-    "reminded of that einstein thing today, how it's less about being a genius and more about not quitting when it's hard",
-    "you know that eleanor roosevelt idea, how no one can make you feel small without you letting them? been thinking about that",
-    "there's a maya angelou line about how people forget what you said but never how you made them feel. thought of you",
-    "churchill supposedly said success is just failing a bunch without losing your spark. felt like you needed that",
-    "rumi had this idea that your wounds are kind of where the light gets in. kinda beautiful ngl",
-    "mandela said something like it always seems impossible until it's done. thought of you today",
-    "there's a confucius quote about how it doesn't matter how slow you go as long as you don't stop",
-    "someone once said the best way out of something hard is straight through it",
-    "there's that line about missing 100% of the shots you don't take, cheesy but kinda true",
-    "frida kahlo talked about planting your own garden instead of waiting for someone to bring you flowers. love that one",
-    "lao tzu said a journey of a thousand miles starts with one step. you've already started, you know",
-    "someone smart once said worrying is like paying a debt you don't even owe yet",
-    "there's a quote about how the only way to do great work is to love what you're doing. do you love what you're doing lately",
-    "marcus aurelius had this whole thing about the obstacle being the way forward, not something blocking you",
-    "audrey hepburn said something about how nothing is impossible, the word itself says 'i'm possible'. corny but i like it",
-    "there's a thoreau line about going confidently in the direction of your dreams. felt like you needed that today",
-    "steve jobs said your time is limited so don't waste it living someone else's life. hits different sometimes",
-    "there's a quote from anne frank about how it's a wonder people haven't given up hope, given everything. resilience is wild",
-    "oprah has this idea that turning wounds into wisdom is the whole point. thought that fit today",
-    "there's a line from c.s. lewis about how you're never too old to set a new goal or dream a new dream",
-    "helen keller said life is either a daring adventure or nothing at all. bit intense but kinda motivating",
-    "there's a quote about how the best time to plant a tree was 20 years ago, second best time is now",
-    "bruce lee had this idea about being like water, adapting to whatever shape life needs you to be",
-    "there's a line from viktor frankl about how everything can be taken from you except how you choose to respond to what happens",
-    "someone once said be yourself bc everyone else is already taken. simple but true",
+# --- Category 1: Workout / jogging / eating healthy ---
+MESSAGES_WORKOUT = [
+    "good morning mahal! ingat sa jog mo ha, miss na miss na kita",
+    "magandang umaga hon! sana maganda ang takbo mo ngayon, proud na proud ako sa'yo palagi",
+    "good morning babe! nakapag-workout ka na? kahit hindi pa, gwapa ka pa rin sa akin",
+    "magandang umaga mahal! inom ka ng tubig ha, ayaw kong ma-dehydrate ka",
+    "good morning hon! alam kong sinusunod mo yang healthy living mo, sobrang proud ako sa'yo",
+    "magandang umaga babe! sabi mo dati magiging consistent ka, and look at you now, grabe ka",
+    "good morning mahal! sana hindi masakit katawan mo, ingat ka diyan sa takbo mo",
+    "magandang umaga hon! sarap siguro ng almusal mo ngayon, inggit ako haha miss kita",
+    "good morning babe! kahit ang layo ko, ramdam ko yang sipag mo, sobrang proud ako",
+    "magandang umaga mahal! para sa'yo yang workout mo, hindi lang sa katawan, para rin sa isip mo",
 ]
+
+# --- Category 2: Missing the kids ---
+MESSAGES_KIDS = [
+    "good morning mahal! alam kong miss mo na ang mga bata, ako rin miss ko na kayong lahat",
+    "magandang umaga hon! nandiyan lang sila sa puso mo palagi, kahit malayo",
+    "good morning babe! miss na miss mo sila no? ako rin, mahal na mahal ko kayong tatlo",
+    "magandang umaga mahal! tawagan mo sila mamaya ha, gagaan pakiramdam mo, promise",
+    "good morning hon! ang mga bata, swerte sa'yo. ikaw ang pinakamagandang nanay sa mundo",
+    "magandang umaga babe! bawat araw, palapit nang palapit tayo sa pagsasama ulit, kapit lang",
+    "good morning mahal! kahit hindi mo sila kasama ngayon, alam nila kung gaano mo sila kamahal",
+    "magandang umaga hon! sabihin mo sa mga bata mamaya mahal na mahal sila ni daddy",
+    "good morning babe! ikaw ang puso ng pamilya natin, kahit malayo ka, ikaw pa rin ang sentro",
+    "magandang umaga mahal! sabi nila mahirap maging nanay, pero ikaw, ginagawa mong madali ang lahat",
+]
+
+# --- Category 3: Husband's appreciation of his wife ---
+MESSAGES_MOM = [
+    "good morning mahal! sobrang proud ako sa'yo, mom of 2, nagwoworkout, nag-aalaga pa. superhero ka",
+    "magandang umaga hon! hindi ko alam paano mo nagagawa lahat, pero ginagawa mo. amazing ka",
+    "good morning babe! alam kong pagod ka, pero hindi mo ipinapakita. mahal na mahal kita",
+    "magandang umaga mahal! ikaw ang pinakamalakas na taong kilala ko, at asawa kita, swerte ko",
+    "good morning hon! kahit sobrang busy mo, lagi mo pa rin akong naaalala. thank you mahal",
+    "magandang umaga babe! sana may oras ka rin para sa sarili mo ngayon, deserve mo 'yon",
+    "good morning mahal! ikaw ang dahilan kung bakit okay ako palagi, alam mo ba 'yon",
+    "magandang umaga hon! proud ako sa lahat ng ginagawa mo, kahit hindi ko sinasabi madalas",
+    "good morning babe! ang tibay mo, ang galing mo, ang sarap mo mahalin. good morning mahal",
+    "magandang umaga mahal! kahit magkalayo tayo ngayon, ikaw pa rin ang unang iniisip ko pagkagising",
+]
+
+# --- Category 4: Sweet & romantic ---
+MESSAGES_LOVE = [
+    "good morning mahal! ikaw agad ang naisip ko pagkagising ko, araw-araw ganito",
+    "magandang umaga hon! miss na miss na kita, sana nandiyan ka lang",
+    "good morning babe! sana maganda gising mo, mahal na mahal kita",
+    "magandang umaga mahal! paalala lang, mahal kita, sobra, walang dahilan kailangan",
+    "good morning hon! kahit malayo ka, ramdam ko pa rin ang yakap mo",
+    "magandang umaga babe! ikaw pa rin ang pinakamagandang babae para sa akin, walang kupas",
+    "good morning mahal! sana ngayon, maramdaman mo kung gaano kita kamahal",
+    "magandang umaga hon! nandito lang ako palagi, kahit ano'ng mangyari, kapit lang",
+    "good morning babe! sabi nila mahirap magmahal ng malayo, pero sa'yo, madali lang pala",
+    "magandang umaga mahal! araw-araw kitang pipiliin, walang sawa, walang duda",
+]
+
+# --- Category 5: Healthy quotes (husband voice) ---
+MESSAGES_HEALTHY_QUOTES = [
+    "good morning mahal! sabi nila, 'take care of your body, it's the only place you have to live.' kaya alagaan mo sarili mo ha, para sa akin at sa mga bata",
+    "magandang umaga hon! 'health is not about the weight you lose, but the life you gain.' proud ako sa journey mo",
+    "good morning babe! 'eating well is a form of self-respect.' kaya go ka lang sa healthy food mo, suporta ako palagi",
+    "magandang umaga mahal! 'the body achieves what the mind believes.' alam kong kaya mo 'yan, ikaw pa",
+    "good morning hon! 'movement is medicine.' kaya kahit maliit na jog lang, gamot na 'yon, sabi nila",
+    "magandang umaga babe! 'your body hears everything your mind says.' kaya positive thoughts today ha, mahal",
+    "good morning mahal! 'a healthy outside starts from the inside.' alagaan mo puso mo today, at ako naman ang bahala sa pagmamahal",
+    "magandang umaga hon! 'sleep is the best meditation.' sana nakatulog ka nang maayos kagabi, mahal",
+    "good morning babe! 'water is the driving force of all nature.' inom ka ng tubig ha, ayaw kong mauhaw ka",
+    "magandang umaga mahal! 'the food you eat can be the safest form of medicine.' kaya proud ako sa healthy choices mo",
+]
+
+# --- Category 6: Exercise tips (husband voice) ---
+MESSAGES_EXERCISE_TIPS = [
+    "good morning mahal! tip ko sa'yo today: mag-stretch ka muna bago mag-jog, ayaw kong ma-injure ka",
+    "magandang umaga hon! inom ka ng tubig bago, habang, at pagkatapos ng workout ha, mahal",
+    "good morning babe! kung masakit tuhod mo sa jog, maglakad ka muna, huwag mo pilitin",
+    "magandang umaga mahal! 10 minutong stretching bago matulog, gagaan katawan mo bukas, promise",
+    "good morning hon! huwag mong laktawan ang rest day ha, kailangan 'yon ng katawan mo",
+    "magandang umaga babe! kapag pagod ka, 20 minutong brisk walk lang, sapat na 'yon, mahal",
+    "good morning mahal! focus ka sa form, hindi sa bilis, mas safe at effective 'yon",
+    "magandang umaga hon! dagdagan mo ng protina almusal mo, para may energy ka sa workout",
+    "good morning babe! pagkatapos ng workout, mag-stretch at mag-hydrate, recovery is key, mahal",
+    "magandang umaga mahal! kung tinatamad ka, sabihin mo '5 minutes lang', tapos tuloy-tuloy na 'yan",
+    "good morning hon! suotin mo ang tamang sapatos sa jog ha, para sa safety mo",
+    "magandang umaga babe! mag-jog ka sa umaga kung kaya, mas fresh hangin at mas magaan pakiramdam",
+]
+
+# --- Category 7: Inspiring quotes (husband voice) ---
+MESSAGES_INSPIRING = [
+    "good morning mahal! 'the only bad workout is the one that didn't happen.' kaya kahit maliit lang, go ka lang, suporta ako",
+    "magandang umaga hon! 'you don't have to be extreme, just consistent.' totoo 'yan para sa'yo, mahal",
+    "good morning babe! 'progress, not perfection.' bawat hakbang mo, counted 'yon sa akin",
+    "magandang umaga mahal! 'the body achieves what the mind believes.' kaya mo 'yan today, alam ko",
+    "good morning hon! 'discipline is choosing between what you want now and what you want most.' ikaw 'yon, mahal",
+    "magandang umaga babe! 'you are stronger than you think.' paalala lang 'yan today, mahal ko",
+    "good morning mahal! 'small steps every day lead to big results.' kaya tuloy lang, nandito ako",
+    "magandang umaga hon! 'your only limit is you.' pero alam kong kayang-kaya mo, mahal",
+    "good morning babe! 'fall in love with taking care of yourself.' deserve mo 'yon, at mahal kita",
+    "magandang umaga mahal! 'the struggle you're in today is developing the strength you need for tomorrow.' kapit lang ha",
+    "good morning hon! 'you don't have to be great to start, but you have to start to be great.' go ka na, mahal",
+    "magandang umaga babe! 'be stronger than your excuses.' kaya mo 'yan, mom of 2 pa, asawa ko pa",
+]
+
+# --- Category 8: Short & everyday (husband voice) ---
+MESSAGES_SHORT = [
+    "good morning mahal! kamusta ka na? miss na miss kita",
+    "magandang umaga hon! ingat ka lagi ha, mahal kita",
+    "good morning babe! sana masarap kape mo ngayon, mahal",
+    "magandang umaga mahal! kaya mo 'yan today, nandito lang ako",
+    "good morning hon! laban lang, mahal na mahal kita",
+]
+
+# Combine all categories so any one can be picked.
+MESSAGES = (
+    MESSAGES_WORKOUT
+    + MESSAGES_KIDS
+    + MESSAGES_MOM
+    + MESSAGES_LOVE
+    + MESSAGES_HEALTHY_QUOTES
+    + MESSAGES_EXERCISE_TIPS
+    + MESSAGES_INSPIRING
+    + MESSAGES_SHORT
+)
+
 
 def today_in_manila():
-    # Philippines is UTC+8 year-round; a fixed offset needs no timezone data.
     return datetime.now(timezone(timedelta(hours=8)))
 
 
@@ -169,12 +188,10 @@ def parse_birthdays(raw):
 
 
 def birthdays_today():
-    """Return [(number, name), ...] for anyone whose birthday is today (Manila time)."""
     now = today_in_manila()
     key = TEST_DATE or now.strftime("%m-%d")
     found = []
     for date, number, name in parse_birthdays(BIRTHDAYS):
-        # Feb 29 birthdays get their greeting on Feb 28 in non-leap years.
         leap_case = date == "02-29" and key == "02-28" and not is_leap(now.year)
         if date == key or leap_case:
             found.append((number, name))
@@ -198,7 +215,7 @@ def send_message():
     if not DRY_RUN and not all([SMSGATEWAY_LOGIN, SMSGATEWAY_PASSWORD, RECIPIENT_PHONE_NUMBER]):
         raise SystemExit(
             "Missing config. Set SMSGATEWAY_LOGIN, SMSGATEWAY_PASSWORD, and "
-            "RECIPIENT_PHONE_NUMBER as environment variables. See SETUP_OWN_PHONE.md."
+            "RECIPIENT_PHONE_NUMBER as environment variables."
         )
 
     daily_numbers = [n.strip() for n in (RECIPIENT_PHONE_NUMBER or "").split(",") if n.strip()]
@@ -208,14 +225,13 @@ def send_message():
     for number, name in celebrating:
         send([number], random.choice(BIRTHDAY_MESSAGES).format(name=name))
 
-    # 2) Daily message to everyone else. Anyone getting a birthday text today
-    #    skips the regular message so they only get the birthday one.
+    # 2) 8AM good morning message to everyone else.
     birthday_numbers = {number for number, _ in celebrating}
     daily_numbers = [n for n in daily_numbers if n not in birthday_numbers]
     if daily_numbers:
         send(daily_numbers, random.choice(MESSAGES))
     else:
-        print("No one left for the regular daily message today.")
+        print("No one left for the regular good morning message today.")
 
 
 if __name__ == "__main__":
