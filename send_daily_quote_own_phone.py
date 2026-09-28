@@ -1,17 +1,25 @@
 """
 send_daily_goodmorning_sms.py
 
-Sends one random good-morning message per day at 8AM (Manila time) as a real
+Sends one random good-morning message per day at 5:30 AM (Manila time) as a real
 SMS from YOUR OWN phone number, using the "SMS Gateway for Android" app.
+
+FEATURES:
+  - No-repeat memory (state file remembers what's been sent)
+  - Day-of-week themes (Mon=workout, Tue=work, Wed=kids, Thu=health,
+    Fri=mental health, Sat=inspiring, Sun=love)
+  - Short & sweet only (all messages under ~160 chars)
+  - Husband voice ("hon", "mama", no name needed)
 
 SETUP:
   1. Install "SMS Gateway for Android" from the Play Store.
   2. Enable Cloud Server mode and sign in / register for API login + password.
   3. pip install requests
   4. Set the environment variables below.
-  5. Schedule it to run at 8AM Manila time (cron: 0 0 * * * UTC = 8AM PHT).
+  5. Schedule at 5:30 AM Manila time (cron: 30 21 * * * UTC).
 """
 
+import json
 import os
 import random
 from datetime import datetime, timedelta, timezone
@@ -31,138 +39,138 @@ BIRTHDAYS = os.environ.get("BIRTHDAYS", "")
 TEST_DATE = os.environ.get("TEST_DATE", "").strip()
 DRY_RUN = os.environ.get("DRY_RUN", "").strip() == "1"
 
+# ---- No-repeat memory ----
+# Tracks which messages have been sent already per category. Stored as JSON.
+# In GitHub Actions, commit this file back or use actions/cache so it persists.
+STATE_FILE = os.environ.get("STATE_FILE", "sent_state.json")
+
 BIRTHDAY_MESSAGES = [
-    "happy birthday mahal!! sobrang swerte ko sa'yo, I hope today is as beautiful as you are",
-    "uy hon, happy birthday! mahal na mahal kita, enjoy your day ha",
-    "happy birthday babe! isa na namang taon na kasama kita, thank you for everything",
-    "mahal, happy birthday! sana ma-spoil kita today, deserve mo lahat",
-    "happy birthday hon, ikaw pa rin ang pinakamagandang nanay at asawa para sa akin",
+    "happy birthday mama!! swerte ko sa'yo, mahal na mahal kita",
+    "uy hon, happy birthday! enjoy your day ha, deserve mo lahat",
+    "happy birthday hon! isa na namang taon na kasama kita, thank you",
+    "mama, happy birthday! sana ma-spoil kita today",
+    "happy birthday hon, ikaw pa rin pinakamaganda para sa akin",
 ]
 
-# ---- 8AM Good morning messages (as a husband to his wife) ----
+# ============================================================
+# DAY-OF-WEEK THEMES
+# ============================================================
+# Monday    = workout / jog / healthy eating
+# Tuesday   = work check-in
+# Wednesday = kids / missing them
+# Thursday  = health tips & healthy quotes
+# Friday    = mental health check-in
+# Saturday  = inspiring quotes
+# Sunday    = love / romantic
 
-# --- Category 1: Workout / jogging / eating healthy ---
 MESSAGES_WORKOUT = [
-    "good morning mahal! ingat sa jog mo ha, miss na miss na kita",
-    "magandang umaga hon! sana maganda ang takbo mo ngayon, proud na proud ako sa'yo palagi",
-    "good morning babe! nakapag-workout ka na? kahit hindi pa, gwapa ka pa rin sa akin",
-    "magandang umaga mahal! inom ka ng tubig ha, ayaw kong ma-dehydrate ka",
-    "good morning hon! alam kong sinusunod mo yang healthy living mo, sobrang proud ako sa'yo",
-    "magandang umaga babe! sabi mo dati magiging consistent ka, and look at you now, grabe ka",
-    "good morning mahal! sana hindi masakit katawan mo, ingat ka diyan sa takbo mo",
-    "magandang umaga hon! sarap siguro ng almusal mo ngayon, inggit ako haha miss kita",
-    "good morning babe! kahit ang layo ko, ramdam ko yang sipag mo, sobrang proud ako",
-    "magandang umaga mahal! para sa'yo yang workout mo, hindi lang sa katawan, para rin sa isip mo",
+    "good morning hon! ingat sa jog mo ha, miss na miss kita",
+    "magandang umaga hon! proud ako sa'yo palagi, takbo ka lang diyan",
+    "good morning hon! inom ka ng tubig ha, ayaw kong ma-dehydrate ka",
+    "magandang umaga hon! sipag mo, sobrang proud ako sa'yo",
+    "good morning hon! sabi mo magiging consistent ka, and look at you now",
+    "magandang umaga hon! ingat sa takbo mo, mahal kita",
+    "good morning hon! sarap siguro almusal mo ngayon, miss kita",
+    "magandang umaga hon! kahit malayo ako, ramdam ko sipag mo",
+    "good morning hon! para sa'yo yang workout mo, proud ako",
+    "magandang umaga hon! hydrate ka ha, mahal kita",
 ]
 
-# --- Category 2: Missing the kids ---
+MESSAGES_WORK = [
+    "good morning hon! kamusta work mo lately? miss kita",
+    "magandang umaga hon! sana hindi masyadong mabigat trabaho mo today",
+    "good morning hon! kung stressed ka sa work, huminga ka lang ha",
+    "magandang umaga hon! proud ako sa lahat ng ginagawa mo sa work",
+    "good morning hon! wag mo pilitin sarili mo sa work ha, mahal kita",
+    "magandang umaga hon! sana okay lang work mo today, nandito lang ako",
+    "good morning hon! kung pagod ka sa work, magpahinga ka ha",
+    "magandang umaga hon! hindi mo kailangang gawin lahat today, isa-isa lang",
+    "good morning hon! kamusta ka na ba talaga? miss kita",
+    "magandang umaga hon! proud ako sa'yo, kahit hindi mo naririnig madalas",
+]
+
 MESSAGES_KIDS = [
-    "good morning mahal! alam kong miss mo na ang mga bata, ako rin miss ko na kayong lahat",
-    "magandang umaga hon! nandiyan lang sila sa puso mo palagi, kahit malayo",
-    "good morning babe! miss na miss mo sila no? ako rin, mahal na mahal ko kayong tatlo",
-    "magandang umaga mahal! tawagan mo sila mamaya ha, gagaan pakiramdam mo, promise",
-    "good morning hon! ang mga bata, swerte sa'yo. ikaw ang pinakamagandang nanay sa mundo",
-    "magandang umaga babe! bawat araw, palapit nang palapit tayo sa pagsasama ulit, kapit lang",
-    "good morning mahal! kahit hindi mo sila kasama ngayon, alam nila kung gaano mo sila kamahal",
-    "magandang umaga hon! sabihin mo sa mga bata mamaya mahal na mahal sila ni daddy",
-    "good morning babe! ikaw ang puso ng pamilya natin, kahit malayo ka, ikaw pa rin ang sentro",
-    "magandang umaga mahal! sabi nila mahirap maging nanay, pero ikaw, ginagawa mong madali ang lahat",
+    "good morning hon! miss mo na sila no? ako rin miss ko kayong lahat",
+    "magandang umaga hon! nandiyan lang sila sa puso mo palagi",
+    "good morning hon! tawagan mo sila mamaya ha, gagaan pakiramdam mo",
+    "magandang umaga hon! ang mga bata swerte sa'yo, ikaw pinakamagandang mama",
+    "good morning hon! palapit nang palapit tayo sa pagsasama ulit, kapit lang",
+    "magandang umaga hon! mahal na mahal ka nila, alam mo 'yon",
+    "good morning hon! sabihin mo sa kanila mahal sila ni daddy",
+    "magandang umaga hon! ikaw puso ng pamilya natin, miss kita",
+    "good morning hon! mahirap maging mama, pero ginagawa mong madali",
+    "magandang umaga hon! miss na miss ko kayong tatlo",
 ]
 
-# --- Category 3: Husband's appreciation of his wife ---
-MESSAGES_MOM = [
-    "good morning mahal! sobrang proud ako sa'yo, nagwoworkout, nag-aalaga pa. superhero ka",
-    "magandang umaga hon! hindi ko alam paano mo nagagawa lahat, pero ginagawa mo. amazing ka",
-    "good morning babe! alam kong pagod ka, pero hindi mo ipinapakita. mahal na mahal kita",
-    "magandang umaga mahal! ikaw ang pinakamalakas na taong kilala ko, at asawa kita, swerte ko",
-    "good morning hon! kahit sobrang busy mo, lagi mo pa rin akong naaalala. thank you mahal",
-    "magandang umaga babe! sana may oras ka rin para sa sarili mo ngayon, deserve mo 'yon",
-    "good morning mahal! ikaw ang dahilan kung bakit okay ako palagi, alam mo ba 'yon",
-    "magandang umaga hon! proud ako sa lahat ng ginagawa mo, kahit hindi ko sinasabi madalas",
-    "good morning babe! ang tibay mo, ang galing mo, ang sarap mo mahalin. good morning mahal",
-    "magandang umaga mahal! kahit magkalayo tayo ngayon, ikaw pa rin ang unang iniisip ko pagkagising",
+MESSAGES_HEALTH = [
+    "good morning hon! 'take care of your body, it's the only place you have to live'",
+    "magandang umaga hon! 'health is not about weight lost, but life gained'",
+    "good morning hon! 'eating well is a form of self-respect', kaya go ka lang",
+    "magandang umaga hon! 'the body achieves what the mind believes', kaya mo 'yan",
+    "good morning hon! 'movement is medicine', kahit maliit na jog, gamot na",
+    "magandang umaga hon! 'your body hears everything your mind says', positive today ha",
+    "good morning hon! 'sleep is the best meditation', sana nakatulog ka maayos",
+    "magandang umaga hon! 'water is the driving force of all nature', inom ka ha",
+    "good morning hon! tip: mag-stretch bago mag-jog, ayaw kong ma-injure ka",
+    "magandang umaga hon! tip: inom ng tubig bago at pagkatapos ng workout",
+    "good morning hon! tip: huwag laktawan rest day, kailangan 'yon ng katawan mo",
+    "magandang umaga hon! tip: focus sa form, hindi sa bilis, mas safe 'yon",
 ]
 
-# --- Category 4: Sweet & romantic ---
-MESSAGES_LOVE = [
-    "good morning mahal! ikaw agad ang naisip ko pagkagising ko, araw-araw ganito",
-    "magandang umaga hon! miss na miss na kita, sana nandiyan ka lang",
-    "good morning babe! sana maganda gising mo, mahal na mahal kita",
-    "magandang umaga mahal! paalala lang, mahal kita, sobra, walang dahilan kailangan",
-    "good morning hon! kahit malayo ka, ramdam ko pa rin ang yakap mo",
-    "magandang umaga babe! ikaw pa rin ang pinakamagandang babae para sa akin, walang kupas",
-    "good morning mahal! sana ngayon, maramdaman mo kung gaano kita kamahal",
-    "magandang umaga hon! nandito lang ako palagi, kahit ano'ng mangyari, kapit lang",
-    "good morning babe! sabi nila mahirap magmahal ng malayo, pero sa'yo, madali lang pala",
-    "magandang umaga mahal! araw-araw kitang pipiliin, walang sawa, walang duda",
+MESSAGES_MENTAL = [
+    "good morning hon! kamusta puso mo today? seryoso ako, miss kita",
+    "magandang umaga hon! okay lang na pagod ka, hindi 'yon kabiguan",
+    "good morning hon! kung mabigat today, huminga ka lang, kaya mo 'yan",
+    "magandang umaga hon! hindi mo kailangang maging okay palagi, totoo ka lang",
+    "good morning hon! nandito lang ako, kahit ano'ng mangyari, kapit lang",
+    "magandang umaga hon! kung kailangan mo ng kausap, nandito lang ako",
+    "good morning hon! okay lang na hindi okay ngayon, mahal pa rin kita",
+    "magandang umaga hon! ingat sa sarili mo ha, mahalaga ka sa akin",
+    "good morning hon! kung overwhelmed ka, isa-isa lang, kaya mo 'yan",
+    "magandang umaga hon! proud ako sa'yo, kahit mahirap ang araw",
 ]
 
-# --- Category 5: Healthy quotes (husband voice) ---
-MESSAGES_HEALTHY_QUOTES = [
-    "good morning mahal! sabi nila, 'take care of your body, it's the only place you have to live.' kaya alagaan mo sarili mo ha, para sa akin at sa mga bata",
-    "magandang umaga hon! 'health is not about the weight you lose, but the life you gain.' proud ako sa journey mo",
-    "good morning babe! 'eating well is a form of self-respect.' kaya go ka lang sa healthy food mo, suporta ako palagi",
-    "magandang umaga mahal! 'the body achieves what the mind believes.' alam kong kaya mo 'yan, ikaw pa",
-    "good morning hon! 'movement is medicine.' kaya kahit maliit na jog lang, gamot na 'yon, sabi nila",
-    "magandang umaga babe! 'your body hears everything your mind says.' kaya positive thoughts today ha, mahal",
-    "good morning mahal! 'a healthy outside starts from the inside.' alagaan mo puso mo today, at ako naman ang bahala sa pagmamahal",
-    "magandang umaga hon! 'sleep is the best meditation.' sana nakatulog ka nang maayos kagabi, mahal",
-    "good morning babe! 'water is the driving force of all nature.' inom ka ng tubig ha, ayaw kong mauhaw ka",
-    "magandang umaga mahal! 'the food you eat can be the safest form of medicine.' kaya proud ako sa healthy choices mo",
-]
-
-# --- Category 6: Exercise tips (husband voice) ---
-MESSAGES_EXERCISE_TIPS = [
-    "good morning mahal! tip ko sa'yo today: mag-stretch ka muna bago mag-jog, ayaw kong ma-injure ka",
-    "magandang umaga hon! inom ka ng tubig bago, habang, at pagkatapos ng workout ha, mahal",
-    "good morning babe! kung masakit tuhod mo sa jog, maglakad ka muna, huwag mo pilitin",
-    "magandang umaga mahal! 10 minutong stretching bago matulog, gagaan katawan mo bukas, promise",
-    "good morning hon! huwag mong laktawan ang rest day ha, kailangan 'yon ng katawan mo",
-    "magandang umaga babe! kapag pagod ka, 20 minutong brisk walk lang, sapat na 'yon, mahal",
-    "good morning mahal! focus ka sa form, hindi sa bilis, mas safe at effective 'yon",
-    "magandang umaga hon! dagdagan mo ng protina almusal mo, para may energy ka sa workout",
-    "good morning babe! pagkatapos ng workout, mag-stretch at mag-hydrate, recovery is key, mahal",
-    "magandang umaga mahal! kung tinatamad ka, sabihin mo '5 minutes lang', tapos tuloy-tuloy na 'yan",
-    "good morning hon! suotin mo ang tamang sapatos sa jog ha, para sa safety mo",
-    "magandang umaga babe! mag-jog ka sa umaga kung kaya, mas fresh hangin at mas magaan pakiramdam",
-]
-
-# --- Category 7: Inspiring quotes (husband voice) ---
 MESSAGES_INSPIRING = [
-    "good morning mahal! 'the only bad workout is the one that didn't happen.' kaya kahit maliit lang, go ka lang, suporta ako",
-    "magandang umaga hon! 'you don't have to be extreme, just consistent.' totoo 'yan para sa'yo, mahal",
-    "good morning babe! 'progress, not perfection.' bawat hakbang mo, counted 'yon sa akin",
-    "magandang umaga mahal! 'the body achieves what the mind believes.' kaya mo 'yan today, alam ko",
-    "good morning hon! 'discipline is choosing between what you want now and what you want most.' ikaw 'yon, mahal",
-    "magandang umaga babe! 'you are stronger than you think.' paalala lang 'yan today, mahal ko",
-    "good morning mahal! 'small steps every day lead to big results.' kaya tuloy lang, nandito ako",
-    "magandang umaga hon! 'your only limit is you.' pero alam kong kayang-kaya mo, mahal",
-    "good morning babe! 'fall in love with taking care of yourself.' deserve mo 'yon, at mahal kita",
-    "magandang umaga mahal! 'the struggle you're in today is developing the strength you need for tomorrow.' kapit lang ha",
-    "good morning hon! 'you don't have to be great to start, but you have to start to be great.' go ka na, mahal",
-    "magandang umaga babe! 'be stronger than your excuses.' kaya mo 'yan, mom of 2 pa, asawa ko pa",
+    "good morning hon! 'the only bad workout is the one that didn't happen'",
+    "magandang umaga hon! 'progress, not perfection', bawat hakbang counted",
+    "good morning hon! 'you are stronger than you think', paalala lang today",
+    "magandang umaga hon! 'small steps every day lead to big results', tuloy lang",
+    "good morning hon! 'your only limit is you', pero kaya mo 'yan",
+    "magandang umaga hon! 'fall in love with taking care of yourself', deserve mo",
+    "good morning hon! 'be stronger than your excuses', kaya mo 'yan",
+    "magandang umaga hon! 'you don't have to be great to start', go ka na",
+    "good morning hon! 'discipline is choosing what you want most', ikaw 'yon",
+    "magandang umaga hon! 'the struggle today builds strength for tomorrow', kapit lang",
 ]
 
-# --- Category 8: Short & everyday (husband voice) ---
-MESSAGES_SHORT = [
-    "good morning mahal! kamusta ka na? miss na miss kita",
-    "magandang umaga hon! ingat ka lagi ha, mahal kita",
-    "good morning babe! sana masarap kape mo ngayon, mahal",
-    "magandang umaga mahal! kaya mo 'yan today, nandito lang ako",
-    "good morning hon! laban lang, mahal na mahal kita",
+MESSAGES_LOVE = [
+    "good morning hon! ikaw agad naisip ko pagkagising, araw-araw ganito",
+    "magandang umaga hon! miss na miss kita, sana nandiyan ka lang",
+    "good morning hon! mahal na mahal kita, walang dahilan kailangan",
+    "magandang umaga hon! kahit malayo ka, ramdam ko yakap mo",
+    "good morning hon! ikaw pa rin pinakamaganda para sa akin",
+    "magandang umaga hon! araw-araw kitang pipiliin, walang duda",
+    "good morning hon! nandito lang ako palagi, kapit lang mahal",
+    "magandang umaga hon! sana maramdaman mo kung gaano kita kamahal",
+    "good morning hon! mahirap magmahal ng malayo, pero sa'yo madali lang",
+    "magandang umaga hon! mahal kita, sobra, lagi, palagi",
 ]
 
-# Combine all categories so any one can be picked.
-MESSAGES = (
-    MESSAGES_WORKOUT
-    + MESSAGES_KIDS
-    + MESSAGES_MOM
-    + MESSAGES_LOVE
-    + MESSAGES_HEALTHY_QUOTES
-    + MESSAGES_EXERCISE_TIPS
-    + MESSAGES_INSPIRING
-    + MESSAGES_SHORT
-)
+# ---- Day-of-week theme map (Monday=0 ... Sunday=6) ----
+THEMES = {
+    0: MESSAGES_WORKOUT,      # Monday
+    1: MESSAGES_WORK,         # Tuesday
+    2: MESSAGES_KIDS,         # Wednesday
+    3: MESSAGES_HEALTH,       # Thursday
+    4: MESSAGES_MENTAL,       # Friday
+    5: MESSAGES_INSPIRING,    # Saturday
+    6: MESSAGES_LOVE,         # Sunday
+}
+
+THEME_NAMES = {
+    0: "workout", 1: "work", 2: "kids", 3: "health",
+    4: "mental", 5: "inspiring", 6: "love",
+}
 
 
 def today_in_manila():
@@ -181,7 +189,7 @@ def parse_birthdays(raw):
             continue
         parts = [p.strip() for p in chunk.split("|")]
         if len(parts) != 3:
-            print(f"Skipping badly formatted birthday entry (expected MM-DD|number|Name): {chunk!r}")
+            print(f"Skipping badly formatted birthday entry: {chunk!r}")
             continue
         entries.append(tuple(parts))
     return entries
@@ -196,6 +204,37 @@ def birthdays_today():
         if date == key or leap_case:
             found.append((number, name))
     return found
+
+
+# ---- No-repeat memory helpers ----
+def load_state():
+    if os.path.exists(STATE_FILE):
+        try:
+            with open(STATE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            return {}
+    return {}
+
+
+def save_state(state):
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2)
+
+
+def pick_unused(theme_key, pool, state):
+    """Pick a random unused message from the pool. Reset that pool if all used."""
+    used = set(state.get(theme_key, []))
+    available = [m for m in pool if m not in used]
+    if not available:
+        # Everything sent — reset this category's memory
+        print(f"All '{theme_key}' messages used. Resetting this category.")
+        available = pool[:]
+        used = set()
+    choice = random.choice(available)
+    used.add(choice)
+    state[theme_key] = list(used)
+    return choice
 
 
 def send(numbers, text):
@@ -219,19 +258,29 @@ def send_message():
         )
 
     daily_numbers = [n.strip() for n in (RECIPIENT_PHONE_NUMBER or "").split(",") if n.strip()]
+    state = load_state()
 
     # 1) Birthday greetings first.
     celebrating = birthdays_today()
     for number, name in celebrating:
-        send([number], random.choice(BIRTHDAY_MESSAGES).format(name=name))
+        msg = pick_unused("birthday", BIRTHDAY_MESSAGES, state)
+        send([number], msg)
 
-    # 2) 8AM good morning message to everyone else.
+    # 2) Daily themed message to everyone else.
     birthday_numbers = {number for number, _ in celebrating}
     daily_numbers = [n for n in daily_numbers if n not in birthday_numbers]
+
     if daily_numbers:
-        send(daily_numbers, random.choice(MESSAGES))
+        weekday = today_in_manila().weekday()          # 0=Mon ... 6=Sun
+        pool = THEMES[weekday]
+        theme_key = THEME_NAMES[weekday]
+        msg = pick_unused(theme_key, pool, state)
+        print(f"Today's theme: {theme_key}")
+        send(daily_numbers, msg)
     else:
         print("No one left for the regular good morning message today.")
+
+    save_state(state)
 
 
 if __name__ == "__main__":
