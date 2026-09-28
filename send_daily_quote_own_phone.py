@@ -111,11 +111,11 @@ MESSAGES_WORK = [
 MESSAGES_KIDS = [
     "good morning hon! miss mo na sila no? ako rin miss ko kayong lahat",
     "magandang umaga hon! nandiyan lang sila sa puso mo palagi",
-    "good morning hon! tawagan mo sila mamaya ha, gagaan pakiramdam mo",
+    "good morning hon! videocall mo mga bata mamaya",
     "magandang umaga hon! ang mga bata swerte sa'yo, ikaw pinakamagandang mama",
     "good morning hon! palapit nang palapit tayo sa pagsasama ulit, kapit lang",
     "magandang umaga hon! mahal na mahal ka nila, alam mo 'yon",
-    "good morning hon! sabihin mo sa kanila mahal sila ni daddy",
+    "good morning hon! sabihin mo sa mga bata mahal sila ni daddy",
     "magandang umaga hon! ikaw puso ng pamilya natin, miss kita",
     "good morning hon! mahirap maging mama, pero ginagawa mong madali",
     "magandang umaga hon! miss na miss ko kayong tatlo",
