@@ -1,0 +1,53 @@
+name: Daily Good Morning SMS
+on:
+  schedule:
+    - cron: '30 21 * * *'   # 5:30 AM PH time (21:30 UTC previous day) - window start
+  workflow_dispatch:
+    inputs:
+      test_date:
+        description: 'Optional: pretend today is this date (MM-DD) to test birthdays'
+        required: false
+        default: ''
+
+# Needed so this workflow is allowed to push the updated state file back.
+permissions:
+  contents: write
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - run: pip install requests
+
+      - name: Random delay (spreads sends across 5:30-8:00 AM PH)
+        if: github.event_name == 'schedule'
+        run: |
+          MINUTES=$(( RANDOM % 150 ))   # 0 to 149 minutes, stays inside the 2.5 hour window
+          echo "Sleeping $MINUTES minute(s) before sending"
+          sleep "${MINUTES}m"
+
+      - run: python send_daily_goodmorning_sms.py
+        env:
+          SMSGATEWAY_LOGIN: ${{ secrets.SMSGATEWAY_LOGIN }}
+          SMSGATEWAY_PASSWORD: ${{ secrets.SMSGATEWAY_PASSWORD }}
+          RECIPIENT_PHONE_NUMBER: ${{ secrets.RECIPIENT_PHONE_NUMBER }}
+          BIRTHDAYS: ${{ secrets.BIRTHDAYS }}
+          TEST_DATE: ${{ github.event.inputs.test_date }}
+
+      - name: Save no-repeat memory back to the repo
+        run: |
+          if [ -n "$(git status --porcelain sent_state.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add sent_state.json
+            git commit -m "Update sent-message memory [skip ci]"
+            git push
+          else
+            echo "No change to sent_state.json, nothing to commit."
+          fi
