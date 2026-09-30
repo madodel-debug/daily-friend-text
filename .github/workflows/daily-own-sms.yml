@@ -1,7 +1,7 @@
 name: Daily SMS from My Phone
 on:
   schedule:
-    - cron: '30 21 * * *'   # 5:30 AM PH time (21:30 UTC previous day)
+    - cron: '30 21 * * *'   # 5:30 AM PH time (21:30 UTC previous day) - the window start
   workflow_dispatch:
     inputs:
       test_date:
@@ -17,6 +17,12 @@ jobs:
         with:
           python-version: '3.x'
       - run: pip install requests
+      - name: Random delay (spreads sends across 5:30-8:00 AM PH)
+        if: github.event_name == 'schedule'
+        run: |
+          MINUTES=$(( RANDOM % 150 ))   # 0 to 149 minutes, keeps it inside the 2.5 hour window
+          echo "Sleeping $MINUTES minute(s) before sending"
+          sleep "${MINUTES}m"
       - run: python send_daily_quote_own_phone.py
         env:
           SMSGATEWAY_LOGIN: ${{ secrets.SMSGATEWAY_LOGIN }}
