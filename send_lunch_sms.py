@@ -23,6 +23,7 @@ Optional env vars for testing:
   DRY_RUN=1          print instead of sending
 """
 
+import json
 import os
 import random
 from datetime import datetime, timedelta, timezone
@@ -39,6 +40,10 @@ SMSGATEWAY_URL = "https://api.sms-gate.app/3rdparty/v1/messages"
 TEST_WEEKDAY = os.environ.get("TEST_WEEKDAY", "").strip()
 FORCE_SEND = os.environ.get("FORCE_SEND", "").strip() == "1"
 DRY_RUN = os.environ.get("DRY_RUN", "").strip() == "1"
+
+# Same state file the morning script uses, so one file tracks both
+# histories (different keys, no overlap).
+STATE_FILE = os.environ.get("STATE_FILE", "sent_state.json")
 
 DAYS_PER_WEEK = 2  # how many random weekdays get a lunch message
 
@@ -58,7 +63,7 @@ GREETINGS = [
 LUNCH_MESSAGES = [
     "kumain ka ha, wag mong laktawan lunch mo.",
     "sana may gulay sa plato mo today, para balanced.",
-    "try ko yung sinigang recipe mo ulit minsan, miss ko na yung asim.",
+    "try mo yung sinigang recipe natin ulit minsan, miss ko na 'yon.",
     "protina, gulay, kanin, tapos tubig - simple lang pero sapat na.",
     "wag puro rice, dagdagan mo gulay konti ha.",
     "sana masarap lunch mo today, kumain ka ng tama.",
@@ -116,6 +121,36 @@ def this_weeks_chosen_days(now):
     time it's computed during the same week; different next week."""
     rng = random.Random(iso_week_seed(now))
     return set(rng.sample(range(5), DAYS_PER_WEEK))
+
+
+def load_state():
+    if os.path.exists(STATE_FILE):
+        try:
+            with open(STATE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            return {}
+    return {}
+
+
+def save_state(state):
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2)
+
+
+def pick_unused(key, pool, state):
+    """Pick a random unused message for this key. Reset that pool once
+    everything in it has been used."""
+    used = set(state.get(key, []))
+    available = [m for m in pool if m not in used]
+    if not available:
+        print(f"All '{key}' messages used. Resetting this category.")
+        available = pool[:]
+        used = set()
+    choice = random.choice(available)
+    used.add(choice)
+    state[key] = list(used)
+    return choice
 
 
 def humanize(text):
@@ -189,17 +224,20 @@ def send_message():
         print("No recipients configured.")
         return
 
+    state = load_state()
+
     greeting = random.choice(GREETINGS)
     # Cheat day messages show up occasionally, not as the default.
     CHEAT_DAY_CHANCE = 0.15  # roughly 1 in 7 lunch messages
     if random.random() < CHEAT_DAY_CHANCE:
         print("Picked a cheat-day message today.")
-        body = random.choice(CHEAT_DAY_MESSAGES)
+        body = pick_unused("lunch_cheat", CHEAT_DAY_MESSAGES, state)
     else:
-        body = random.choice(LUNCH_MESSAGES)
+        body = pick_unused("lunch", LUNCH_MESSAGES, state)
     text = f"{greeting} {body}" if random.random() < 0.5 else f"{body} {greeting}"
     text = humanize(text)
     send(numbers, text)
+    save_state(state)
 
 
 if __name__ == "__main__":
