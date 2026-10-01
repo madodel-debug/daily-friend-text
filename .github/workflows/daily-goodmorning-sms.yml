@@ -23,6 +23,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 🛑 Kill Switch
+        id: kill
+        run: |
+          if [[ "${{ vars.SMS_ENABLED }}" != "true" ]]; then
+            echo "::warning::SMS sending is DISABLED (SMS_ENABLED != 'true'). Exiting."
+            exit 0
+          fi
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
@@ -32,10 +40,6 @@ jobs:
       - name: Random delay (spreads sends across the window)
         if: github.event_name == 'schedule'
         run: |
-          # Weekday run (5:30-7:00 AM = 90 min window) starts with the
-          # '30 21 * * 0-4' cron; weekend run (6:00-8:00 AM = 120 min
-          # window) starts with '0 22 * * 5,6'. github.event.schedule
-          # tells us which one fired.
           if [ "${{ github.event.schedule }}" = "30 21 * * 0-4" ]; then
             MAX_MINUTES=89
             echo "Weekday run: sending sometime between 5:30 and 7:00 AM PH"
