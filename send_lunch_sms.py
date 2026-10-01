@@ -76,6 +76,28 @@ LUNCH_MESSAGES = [
     "wag mo rin kalimutan mag-stretch bago bumalik sa work pagkatapos kumain.",
     "sana masaya lunch mo, kahit mag-isa ka lang kumain.",
     "miss ko kumain kasama ka, next time ulit.",
+    # ---- Workout / movement reminders (lunchtime-friendly) ----
+    "after lunch, try mong maglakad kahit 5-10 minutes lang, nakakatulong sa digestion at energy.",
+    "kung may oras, konting stretch after kumain, pampagaan ng pakiramdam.",
+    "tip: short walk after lunch beats a nap pagdating sa energy later sa hapon.",
+    "sana may time ka mag-workout mamaya, kahit bahagya lang, proud na proud ako sa consistency mo.",
+    "wag kalimutan pre-workout meal mo ha kung may gym ka later, something light pero may protina.",
+    "miss ko yung dating lakad natin after lunch, sana ulitin natin minsan.",
+    "lunchtime reminder: tubig muna bago kape, araw-araw ganyan at makakatulong talaga.",
+    "sana magaan pakiramdam mo after kumain, try mong iwasan matulog agad para di bloated.",
+    "proud ako sa'yo sa workout mo this week, ingat lang sa diet pati, parehas 'yan importante.",
+]
+
+# ---- Cheat day / reward messages. Sent rarely, not every lunch day. ----
+CHEAT_DAY_MESSAGES = [
+    "okay lang mag-cheat day minsan ha, deserve mo rin mag-enjoy sa kinakain mo.",
+    "sige, bahala ka na sa lunch mo today, kumain ka ng gusto mo, ikaw bahala magdesisyon.",
+    "reward mo sarili mo today, kumain ka ng paborito mo, wag kang maramdam guilty.",
+    "hindi lahat ng araw kailangan strict, minsan okay lang mag-indulge, balance lang.",
+    "you've been consistent lately, treat mo sarili mo ng masarap today, deserve mo.",
+    "cheat meal time? go lang, kaya mo namang balansehin bukas.",
+    "paminsan-minsan okay lang yung burger or pizza, wag ka masyadong mahigpit sa sarili mo.",
+    "sige, free pass ka today sa diet, enjoy ka lang, bukas ulit tayo balik sa healthy.",
 ]
 
 
@@ -94,6 +116,37 @@ def this_weeks_chosen_days(now):
     time it's computed during the same week; different next week."""
     rng = random.Random(iso_week_seed(now))
     return set(rng.sample(range(5), DAYS_PER_WEEK))
+
+
+def humanize(text):
+    """About 1-3% of the time, introduce a small natural-looking slip -
+    either two adjacent letters swapped inside one word, or two adjacent
+    words swapped - so it reads a bit more like a real person typing fast
+    instead of a flawless script. Most of the time this does nothing."""
+    TYPO_CHANCE = 0.02  # 2%, within the requested 1-3% range
+    if random.random() >= TYPO_CHANCE:
+        return text
+
+    if random.random() < 0.5:
+        # Swap two adjacent letters inside a random word of 4+ letters.
+        words = text.split(" ")
+        candidates = [i for i, w in enumerate(words) if len(w) >= 4]
+        if candidates:
+            i = random.choice(candidates)
+            w = words[i]
+            pos = random.randint(1, len(w) - 3)  # avoid first/last letter and punctuation edges
+            w = w[:pos] + w[pos + 1] + w[pos] + w[pos + 2:]
+            words[i] = w
+            return " ".join(words)
+    else:
+        # Swap two adjacent words.
+        words = text.split(" ")
+        if len(words) >= 3:
+            i = random.randint(0, len(words) - 2)
+            words[i], words[i + 1] = words[i + 1], words[i]
+            return " ".join(words)
+
+    return text
 
 
 def send(numbers, text):
@@ -137,8 +190,15 @@ def send_message():
         return
 
     greeting = random.choice(GREETINGS)
-    body = random.choice(LUNCH_MESSAGES)
+    # Cheat day messages show up occasionally, not as the default.
+    CHEAT_DAY_CHANCE = 0.15  # roughly 1 in 7 lunch messages
+    if random.random() < CHEAT_DAY_CHANCE:
+        print("Picked a cheat-day message today.")
+        body = random.choice(CHEAT_DAY_MESSAGES)
+    else:
+        body = random.choice(LUNCH_MESSAGES)
     text = f"{greeting} {body}" if random.random() < 0.5 else f"{body} {greeting}"
+    text = humanize(text)
     send(numbers, text)
 
 
