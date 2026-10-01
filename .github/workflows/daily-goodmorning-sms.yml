@@ -1,7 +1,12 @@
 name: Daily Good Morning SMS
 on:
   schedule:
-    - cron: '30 21 * * *'   # 5:30 AM PH time (21:30 UTC previous day) - window start
+    # Window starts are given in UTC. Philippines is UTC+8, and a start time
+    # just before midnight UTC lands early the next morning in PH time, so
+    # each line's weekday field is shifted back one day from the PH weekday
+    # it's meant to cover.
+    - cron: '30 21 * * 0-4'   # 5:30 AM PH, Mon-Fri (UTC Sun-Thu)
+    - cron: '0 22 * * 5,6'    # 6:00 AM PH, Sat-Sun (UTC Fri-Sat)
   workflow_dispatch:
     inputs:
       test_date:
@@ -9,7 +14,6 @@ on:
         required: false
         default: ''
 
-# Needed so this workflow is allowed to push the updated state file back.
 permissions:
   contents: write
 
@@ -25,10 +29,21 @@ jobs:
 
       - run: pip install requests
 
-      - name: Random delay (spreads sends across 5:30-8:00 AM PH)
+      - name: Random delay (spreads sends across the window)
         if: github.event_name == 'schedule'
         run: |
-          MINUTES=$(( RANDOM % 150 ))   # 0 to 149 minutes, stays inside the 2.5 hour window
+          # Weekday run (5:30-7:00 AM = 90 min window) starts with the
+          # '30 21 * * 0-4' cron; weekend run (6:00-8:00 AM = 120 min
+          # window) starts with '0 22 * * 5,6'. github.event.schedule
+          # tells us which one fired.
+          if [ "${{ github.event.schedule }}" = "30 21 * * 0-4" ]; then
+            MAX_MINUTES=89
+            echo "Weekday run: sending sometime between 5:30 and 7:00 AM PH"
+          else
+            MAX_MINUTES=119
+            echo "Weekend run: sending sometime between 6:00 and 8:00 AM PH"
+          fi
+          MINUTES=$(( RANDOM % (MAX_MINUTES + 1) ))
           echo "Sleeping $MINUTES minute(s) before sending"
           sleep "${MINUTES}m"
 
