@@ -43,11 +43,11 @@ STATE_FILE = os.environ.get("STATE_FILE", "sent_state.json")
 # early specifically to say sorry - no "good morning" greeting here, since
 # this now runs well before the actual good-morning message. ----
 APOLOGY_MESSAGES = [
-    "gising na gising ako ngayon, guilty kasi ako, nakalimutan kong mag-goodnight kagabi. sorry, antok na antok ata ako kagabi. miss kita.",
-    "ang aga ko nagising, sorry talaga, di ko na-send yung goodnight ko kagabi, nakatulog agad ako. mahal kita.",
-    "bumangon ako maaga para lang sabihin sorry, di kita na-greet ng goodnight kagabi, busy lang masyado. ingat ka lagi.",
-    "sorry, gising agad ako, naalala ko kasi nalimutan ko goodnight mo kagabi. nandito pa rin ako lagi, promise.",
-    "aga ko gumising dahil hindi mapakali, sorry hon, di ko na-send yung goodnight kagabi, pagod na pagod ako eh. miss na miss kita.",
+    "Nakalimutan kong mag-goodnight kagabi. sorry, antok na antok ata ako kagabi. miss kita.",
+    "Ang aga ko nagising, di ko na-send yung goodnight ko kagabi, nakatulog agad ako. mahal kita.",
+    "di kita na-greet ng goodnight kagabi, busy lang masyado. ingat ka lagi.",
+    "Sorry, gising agad ako, naalala ko kasi nalimutan ko goodnight mo kagabi. nandito pa rin ako lagi, promise.",
+    "Di ko na-send yung goodnight kagabi, pagod na pagod ako eh. miss na miss kita.",
 ]
 
 
