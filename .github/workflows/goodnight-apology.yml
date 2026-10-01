@@ -1,0 +1,55 @@
+name: Good Night Apology (catch-up)
+on:
+  schedule:
+    # 5:00 AM PH time = 21:00 UTC previous day. Sent well before the
+    # 5:30-8:00 AM good-morning window so the two never overlap.
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+    inputs:
+      force_pending:
+        description: 'Pretend last night was missed, for testing (true/false)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - run: pip install requests
+
+      - name: Random delay (spreads the send across 5:00-5:15 AM)
+        if: github.event_name == 'schedule'
+        run: |
+          MINUTES=$(( RANDOM % 15 ))   # 0 to 14 minutes, stays well clear of 5:30
+          echo "Sleeping $MINUTES minute(s) before checking"
+          sleep "${MINUTES}m"
+
+      - run: python send_goodnight_apology.py
+        env:
+          SMSGATEWAY_LOGIN: ${{ secrets.SMSGATEWAY_LOGIN }}
+          SMSGATEWAY_PASSWORD: ${{ secrets.SMSGATEWAY_PASSWORD }}
+          RECIPIENT_PHONE_NUMBER: ${{ secrets.RECIPIENT_PHONE_NUMBER }}
+          FORCE_PENDING: ${{ github.event.inputs.force_pending == 'true' && '1' || '' }}
+
+      - name: Save state back to the repo
+        run: |
+          git fetch origin main
+          git pull --rebase origin main || true
+          if [ -n "$(git status --porcelain sent_state.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add sent_state.json
+            git commit -m "Update sent-message memory (goodnight apology) [skip ci]"
+            git push
+          else
+            echo "No change to sent_state.json, nothing to commit."
+          fi
