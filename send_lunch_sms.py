@@ -63,7 +63,7 @@ GREETINGS = [
 LUNCH_MESSAGES = [
     "kumain ka ha, wag mong laktawan lunch mo.",
     "sana may gulay sa plato mo today, para balanced.",
-    "try mo yung sinigang recipe natin ulit minsan, miss ko na 'yon.",
+    "try ko yung sinigang recipe mo ulit minsan, miss ko na yung asim.",
     "protina, gulay, kanin, tapos tubig - simple lang pero sapat na.",
     "wag puro rice, dagdagan mo gulay konti ha.",
     "sana masarap lunch mo today, kumain ka ng tama.",
@@ -72,7 +72,7 @@ LUNCH_MESSAGES = [
     "miss ko magluto para sa'yo, soon ulit.",
     "wag mo kalimutan prutas mo later, apple or banana okay lang.",
     "kumain ka ng tama ha, wag puro kape lang.",
-    "sana hindi ka nag-skip ng lunch, importante 'yon.",
+    "sana hindi ka nag-skip ng lunch, importante yon.",
     "light lang lunch mo baka maantok ka sa work, pero sapat ha.",
     "try mo chicken at gulay today, simple pero healthy.",
     "tip: mas mabuti grilled kaysa fried, pero paminsan-minsan okay lang din fried.",
