@@ -15,6 +15,9 @@ on:
         required: false
         default: 'false'
 
+permissions:
+  contents: write
+
 jobs:
   send:
     runs-on: ubuntu-latest
@@ -41,3 +44,17 @@ jobs:
           RECIPIENT_PHONE_NUMBER: ${{ secrets.RECIPIENT_PHONE_NUMBER }}
           TEST_WEEKDAY: ${{ github.event.inputs.test_weekday }}
           FORCE_SEND: ${{ github.event.inputs.force_send == 'true' && '1' || '' }}
+
+      - name: Save no-repeat memory back to the repo
+        run: |
+          git fetch origin main
+          git pull --rebase origin main || true
+          if [ -n "$(git status --porcelain sent_state.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add sent_state.json
+            git commit -m "Update sent-message memory (lunch) [skip ci]"
+            git push
+          else
+            echo "No change to sent_state.json, nothing to commit."
+          fi
