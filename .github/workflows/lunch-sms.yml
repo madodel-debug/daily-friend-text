@@ -1,0 +1,43 @@
+name: Lunch SMS (2 random weekdays)
+on:
+  schedule:
+    # 11:30 AM PH time = 03:30 UTC, Mon-Fri. The script itself decides
+    # whether today is one of this week's 2 chosen days.
+    - cron: '30 3 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      test_weekday:
+        description: 'Optional: pretend today is this weekday, 0=Mon..4=Fri'
+        required: false
+        default: ''
+      force_send:
+        description: 'Send even if today is not a chosen day? (true/false)'
+        required: false
+        default: 'false'
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - run: pip install requests
+
+      - name: Random delay (spreads the send across lunchtime)
+        if: github.event_name == 'schedule'
+        run: |
+          MINUTES=$(( RANDOM % 90 ))   # 0 to 89 minutes -> sometime 11:30 AM-1:00 PM PH
+          echo "Sleeping $MINUTES minute(s) before checking/sending"
+          sleep "${MINUTES}m"
+
+      - run: python send_lunch_sms.py
+        env:
+          SMSGATEWAY_LOGIN: ${{ secrets.SMSGATEWAY_LOGIN }}
+          SMSGATEWAY_PASSWORD: ${{ secrets.SMSGATEWAY_PASSWORD }}
+          RECIPIENT_PHONE_NUMBER: ${{ secrets.RECIPIENT_PHONE_NUMBER }}
+          TEST_WEEKDAY: ${{ github.event.inputs.test_weekday }}
+          FORCE_SEND: ${{ github.event.inputs.force_send == 'true' && '1' || '' }}
