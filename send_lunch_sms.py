@@ -58,7 +58,7 @@ GREETINGS = [
 LUNCH_MESSAGES = [
     "kumain ka ha, wag mong laktawan lunch mo.",
     "sana may gulay sa plato mo today, para balanced.",
-    "try mo yung sinigang recipe natin ulit minsan, miss ko na 'yon.",
+    "try ko yung sinigang recipe mo ulit minsan, miss ko na yung asim.",
     "protina, gulay, kanin, tapos tubig - simple lang pero sapat na.",
     "wag puro rice, dagdagan mo gulay konti ha.",
     "sana masarap lunch mo today, kumain ka ng tama.",
