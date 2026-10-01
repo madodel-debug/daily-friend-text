@@ -15,6 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 🛑 Kill Switch
+        id: kill
+        run: |
+          if [[ "${{ vars.SMS_ENABLED }}" != "true" ]]; then
+            echo "::warning::SMS sending is DISABLED (SMS_ENABLED != 'true'). Exiting."
+            exit 0
+          fi
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
