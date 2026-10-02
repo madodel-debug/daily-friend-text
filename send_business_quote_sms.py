@@ -150,6 +150,56 @@ FALLBACK_QUOTES = [
     # ---- Extreme Ownership ----
     "Extreme Ownership's central claim: there are no bad teams, only bad leaders - leaders own every outcome, good or bad, no exceptions.",
     "Willink and Babin's point: decentralized command only works when every person understands the mission well enough to make the call themselves.",
+
+    # ---- A few more 48 Laws of Power, with examples ----
+    "48 Laws - Cultivate an air of unpredictability: a negotiator who never confirmed his next move in advance kept the other side constantly adjusting to him instead of the reverse.",
+    "48 Laws - Don't commit to one side too early: a mediator who avoided publicly siding with either department kept both sides' trust when a real conflict needed resolving later.",
+    "48 Laws - Re-create yourself after a setback: an executive who openly rebranded his image after a failed venture rebuilt credibility faster than one who kept defending the old story.",
+    "48 Laws - Play to people's fantasies, not just their needs: a product pitched on the outcome people wanted - freedom, status - sold better than one pitched purely on specs.",
+    "48 Laws - Never appear too perfect: a leader who admitted one visible flaw came across as more trustworthy to their team than one who projected total confidence.",
+
+    # ---- More Art of War ----
+    "Sun Tzu: he who knows when he can fight, and when he cannot, will be the one left standing.",
+    "The Art of War's reminder: in the middle of chaos, there's usually an opportunity nobody else is calm enough to see yet.",
+    "Sun Tzu's rhythm: move fast as the wind, stay still as the forest, strike like fire, hold firm like a mountain - match your pace to the moment, not a fixed style.",
+
+    # ---- Start With Why ----
+    "Start With Why's core claim: people don't buy what you do, they buy why you do it.",
+    "Sinek's point: a clear sense of purpose attracts loyalty long before any feature list could.",
+
+    # ---- The Lean Startup ----
+    "The Lean Startup's method: build the smallest possible version of an idea, test it on real users, then adjust - before investing in anything bigger.",
+    "Ries's point in The Lean Startup: a startup's real job isn't executing a fixed plan, it's finding a repeatable business model through constant testing.",
+
+    # ---- The Hard Thing About Hard Things ----
+    "Horowitz's point: there's no formula for the hardest calls in business - just a willingness to decide anyway, with incomplete information.",
+    "The Hard Thing About Hard Things: how you deliver bad news to your team often matters more than the bad news itself.",
+
+    # ---- Never Split the Difference ----
+    "Voss's negotiation rule in Never Split the Difference: 'no' isn't rejection, it's often just the real conversation finally starting.",
+    "Never Split the Difference's trick: mirroring the last few words someone says gets them to keep explaining, almost without noticing they're doing it.",
+
+    # ---- Thinking, Fast and Slow ----
+    "Kahneman's distinction: fast, intuitive thinking is efficient but easily fooled; slow, deliberate thinking is accurate but effortful and often skipped.",
+    "Thinking, Fast and Slow's warning: people are usually more confident in a snap judgment than the evidence actually justifies.",
+
+    # ---- The Innovator's Dilemma ----
+    "Christensen's warning: successful companies often get disrupted not by ignoring their customers, but by listening too closely to the ones they already have.",
+    "The Innovator's Dilemma: a cheaper, simpler product aimed at ignored customers can eventually outgrow the market leader's premium offering.",
+
+    # ---- Shoe Dog ----
+    "Phil Knight's lesson from Shoe Dog: nearly every early version of Nike was one bad quarter away from folding - persistence simply outlasted every near-failure.",
+
+    # ---- Principles ----
+    "Dalio's rule in Principles: pain plus reflection equals progress - a mistake only compounds into growth if you actually sit down and study it.",
+    "Principles' idea: radical transparency inside a team surfaces real problems faster than politeness ever will.",
+
+    # ---- Deep Work ----
+    "Newport's argument in Deep Work: the ability to focus without distraction is getting rarer, and rare skills are valuable skills.",
+    "Deep Work's point: shallow, reactive tasks feel productive in the moment but rarely move anything important forward.",
+
+    # ---- The Dichotomy of Leadership ----
+    "The Dichotomy of Leadership's idea: a good leader stays aggressive without being reckless, confident without being arrogant - balance beats either extreme.",
 ]
 
 
