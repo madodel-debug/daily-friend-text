@@ -1,0 +1,62 @@
+name: Business Quote SMS
+on:
+  schedule:
+    # 7:00 AM PH time = 23:00 UTC previous day.
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+    inputs:
+      force_fallback:
+        description: 'Skip the live API and use the local pool? (true/false)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - run: pip install requests
+
+      - name: Random delay (spreads the send across 7:00-7:30 AM)
+        if: github.event_name == 'schedule' && vars.SMS_ENABLED == 'true'
+        run: |
+          MINUTES=$(( RANDOM % 30 ))   # 0 to 29 minutes
+          echo "Sleeping $MINUTES minute(s) before sending"
+          sleep "${MINUTES}m"
+
+      - name: Send business quote SMS
+        if: vars.SMS_ENABLED == 'true'
+        run: python send_business_quote_sms.py
+        env:
+          SMSGATEWAY_LOGIN: ${{ secrets.SMSGATEWAY_LOGIN }}
+          SMSGATEWAY_PASSWORD: ${{ secrets.SMSGATEWAY_PASSWORD }}
+          DAILY_QUOTE_RECIPIENT_NUMBER: ${{ secrets.DAILY_QUOTE_RECIPIENT_NUMBER }}
+          API_NINJAS_KEY: ${{ secrets.API_NINJAS_KEY }}
+          FORCE_FALLBACK: ${{ github.event.inputs.force_fallback == 'true' && '1' || '' }}
+
+      - name: Skipped (kill switch off)
+        if: vars.SMS_ENABLED != 'true'
+        run: echo "::warning::SMS sending is disabled (SMS_ENABLED is not 'true'). Nothing was sent."
+
+      - name: Save no-repeat memory back to the repo
+        if: vars.SMS_ENABLED == 'true'
+        run: |
+          git fetch origin main
+          git pull --rebase origin main || true
+          if [ -n "$(git status --porcelain sent_state.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add sent_state.json
+            git commit -m "Update sent-message memory (business quote) [skip ci]"
+            git push
+          else
+            echo "No change to sent_state.json, nothing to commit."
+          fi
