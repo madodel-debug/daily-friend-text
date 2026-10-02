@@ -80,6 +80,76 @@ FALLBACK_QUOTES = [
     "48 Laws: keep your allies close, but never fully owe anyone a favor you can't repay.",
     "Strategy, at its core, is just resource allocation - where you spend time and money says more than any mission statement.",
     "Sun Tzu's quiet point: the general who wins makes many calculations before battle, the one who loses makes few.",
+
+    # ---- More 48 Laws of Power, each with a short illustrative example ----
+    "48 Laws - Conceal your intentions: a company quietly bought up a rival's key suppliers before anyone knew an acquisition was coming, so no one could outbid them.",
+    "48 Laws - Win through actions, not argument: instead of debating a skeptical client, a founder just shipped a working prototype and let the result make the case.",
+    "48 Laws - Crush your enemy totally: a business that only half-solved a competitor's weakness watched that competitor come back stronger within a year.",
+    "48 Laws - Use absence to raise your value: a sought-after consultant deliberately limited his availability, and both demand and his rates kept climbing.",
+    "48 Laws - Enter with boldness: a job candidate who directly asked for the role they wanted, instead of hedging, got taken far more seriously than the cautious applicants.",
+    "48 Laws - Know what truly motivates each person: a manager who learned one team member wanted recognition and another wanted autonomy got buy-in without forcing anything.",
+    "48 Laws - Think freely, behave conventionally: a reformer who kept bold ideas private while following normal office norms avoided getting pushed out before real change was possible.",
+    "48 Laws - Stay adaptable, assume no fixed shape: a company that kept reinventing its business model survived three industry shifts that wiped out more rigid competitors.",
+
+    # ---- A few more Art of War ideas ----
+    "Sun Tzu: appear weaker than you are when you're strong, and stronger than you are when you're weak - perception shapes what rivals choose to risk.",
+    "The Art of War's core bet: the ultimate skill is winning without ever having to fight - conflict itself is often a sign the planning failed earlier.",
+    "Sun Tzu again: opportunities multiply as they're seized - waiting for the perfect moment often means missing every workable one.",
+
+    # ---- Made to Stick ----
+    "Made to Stick's point: ideas spread when they're simple and concrete - a nutrition label works better than a lecture on calories.",
+    "From Made to Stick: a surprising fact gets remembered longer than one that just confirms what people already believed.",
+    "Made to Stick's lesson: one specific customer story often persuades more than a spreadsheet full of satisfaction scores.",
+
+    # ---- Blue Ocean Strategy ----
+    "Blue Ocean Strategy's idea: stop competing on the same features as everyone else, and build a market space rivals aren't even looking at.",
+    "Blue Ocean's favorite example: Cirque du Soleil dropped animal acts and ticket-price wars entirely, and built an entirely new audience instead of fighting over the old one.",
+    "Blue Ocean Strategy: value innovation means cutting costs and raising value at the same time, not treating them as a trade-off.",
+
+    # ---- The Toyota Way ----
+    "The Toyota Way: stop the line the moment a defect appears, instead of letting small problems pile up downstream into big ones.",
+    "Toyota's principle: small, constant improvements beat one big redesign that nobody keeps maintaining afterward.",
+    "The Toyota Way treats respect for people and continuous improvement as the same discipline, just aimed at different problems.",
+
+    # ---- The 4-Hour Work Week ----
+    "Ferriss's line from The 4-Hour Work Week: being busy is often just a form of laziness - lazy thinking and indiscriminate action.",
+    "The 4-Hour Work Week's point: outsourcing the predictable parts of your work frees up time for the parts only you can actually do.",
+    "Ferriss again: define what 'enough' looks like before chasing more - most people grow without ever picking a finish line.",
+
+    # ---- Zero to One ----
+    "Zero to One's core idea: going from 0 to 1 means building something genuinely new, not copying what already works - that's where real value gets created.",
+    "Thiel's question from Zero to One: a startup's biggest risk isn't poor execution, it's never asking what's true that nobody else agrees with yet.",
+    "Zero to One: competition erodes profit - a small monopoly in an overlooked niche usually beats a crowded, competitive market.",
+
+    # ---- Atomic Habits ----
+    "Atomic Habits' line: you don't rise to the level of your goals, you fall to the level of your systems - the habit matters more than the ambition.",
+    "Atomic Habits: make good habits obvious and bad habits invisible - environment design beats willpower on most days.",
+    "Atomic Habits' math: getting just 1% better each day compounds into a completely different trajectory a year later.",
+
+    # ---- The Obstacle Is the Way ----
+    "The Obstacle Is the Way's core line: the obstacle in the path becomes the path - what blocks you can become the way through, once you change how you see it.",
+    "Holiday's Stoic point: you don't control events, only your response to them - that's the only lever that actually works.",
+
+    # ---- Good to Great ----
+    "Good to Great's warning: good is the enemy of great - most companies never become great because they settle for merely good.",
+    "Good to Great's advice: get the right people on the bus before deciding where the bus is even going.",
+    "Collins's hedgehog concept: find the one thing you can be best in the world at, and ignore everything adjacent to it.",
+
+    # ---- Ready, Fire, Aim ----
+    "Ready, Fire, Aim's lesson: most failed businesses didn't fail from a bad idea, they failed from overplanning before ever actually selling anything.",
+    "Masterson's point in Ready, Fire, Aim: sell first and perfect later - the market tells you what to build better than any business plan does.",
+
+    # ---- Traction (EOS) ----
+    "Traction's rule: a business without a clear, ranked set of priorities drifts, even when everyone's individually working hard.",
+    "Traction's point: fewer priorities, clearly ranked, beat a long list that everyone quietly ignores.",
+
+    # ---- Awaken the Giant Within ----
+    "Tony Robbins's line: the quality of your life is the quality of your decisions, made in a split second, usually under pressure.",
+    "Awaken the Giant Within's idea: real change happens when the pain of staying the same finally outweighs the pain of changing.",
+
+    # ---- Extreme Ownership ----
+    "Extreme Ownership's central claim: there are no bad teams, only bad leaders - leaders own every outcome, good or bad, no exceptions.",
+    "Willink and Babin's point: decentralized command only works when every person understands the mission well enough to make the call themselves.",
 ]
 
 
