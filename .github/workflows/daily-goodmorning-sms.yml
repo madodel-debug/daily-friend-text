@@ -23,14 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 🛑 Kill Switch
-        id: kill
-        run: |
-          if [[ "${{ vars.SMS_ENABLED }}" != "true" ]]; then
-            echo "::warning::SMS sending is DISABLED (SMS_ENABLED != 'true'). Exiting."
-            exit 0
-          fi
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
@@ -38,7 +30,7 @@ jobs:
       - run: pip install requests
 
       - name: Random delay (spreads sends across the window)
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' && vars.SMS_ENABLED == 'true'
         run: |
           if [ "${{ github.event.schedule }}" = "30 21 * * 0-4" ]; then
             MAX_MINUTES=89
@@ -51,7 +43,9 @@ jobs:
           echo "Sleeping $MINUTES minute(s) before sending"
           sleep "${MINUTES}m"
 
-      - run: python send_daily_goodmorning_sms.py
+      - name: Send good morning SMS
+        if: vars.SMS_ENABLED == 'true'
+        run: python send_daily_goodmorning_sms.py
         env:
           SMSGATEWAY_LOGIN: ${{ secrets.SMSGATEWAY_LOGIN }}
           SMSGATEWAY_PASSWORD: ${{ secrets.SMSGATEWAY_PASSWORD }}
@@ -59,8 +53,15 @@ jobs:
           BIRTHDAYS: ${{ secrets.BIRTHDAYS }}
           TEST_DATE: ${{ github.event.inputs.test_date }}
 
+      - name: Skipped (kill switch off)
+        if: vars.SMS_ENABLED != 'true'
+        run: echo "::warning::SMS sending is disabled (SMS_ENABLED is not 'true'). Nothing was sent."
+
       - name: Save no-repeat memory back to the repo
+        if: vars.SMS_ENABLED == 'true'
         run: |
+          git fetch origin main
+          git pull --rebase origin main || true
           if [ -n "$(git status --porcelain sent_state.json)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
