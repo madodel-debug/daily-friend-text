@@ -66,7 +66,7 @@ NIGHT_MESSAGES = [
     "ingat, matulog ka ng maayos ha, mahal kita.",
     "last message ko for today, goodnight mahal, ingat lagi.",
     "sana comfortable ka matulog tonight, mahal kita.",
-    "miss kita, sana mabilis na next time tayo magkasama.",
+    "miss na kita.",
     "proud ako sa'yo today, rest ka na ha.",
     "huminga ka lang, tapos na araw na 'to, tulog na.",
     "goodnight, see you sa panaginip.",
