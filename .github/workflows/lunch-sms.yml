@@ -24,14 +24,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 🛑 Kill Switch
-        id: kill
-        run: |
-          if [[ "${{ vars.SMS_ENABLED }}" != "true" ]]; then
-            echo "::warning::SMS sending is DISABLED (SMS_ENABLED != 'true'). Exiting."
-            exit 0
-          fi
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
@@ -39,13 +31,15 @@ jobs:
       - run: pip install requests
 
       - name: Random delay (spreads the send across lunchtime)
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' && vars.SMS_ENABLED == 'true'
         run: |
           MINUTES=$(( RANDOM % 90 ))   # 0 to 89 minutes -> sometime 11:30 AM-1:00 PM PH
           echo "Sleeping $MINUTES minute(s) before checking/sending"
           sleep "${MINUTES}m"
 
-      - run: python send_lunch_sms.py
+      - name: Send lunch SMS
+        if: vars.SMS_ENABLED == 'true'
+        run: python send_lunch_sms.py
         env:
           SMSGATEWAY_LOGIN: ${{ secrets.SMSGATEWAY_LOGIN }}
           SMSGATEWAY_PASSWORD: ${{ secrets.SMSGATEWAY_PASSWORD }}
@@ -53,7 +47,12 @@ jobs:
           TEST_WEEKDAY: ${{ github.event.inputs.test_weekday }}
           FORCE_SEND: ${{ github.event.inputs.force_send == 'true' && '1' || '' }}
 
+      - name: Skipped (kill switch off)
+        if: vars.SMS_ENABLED != 'true'
+        run: echo "::warning::SMS sending is disabled (SMS_ENABLED is not 'true'). Nothing was sent."
+
       - name: Save no-repeat memory back to the repo
+        if: vars.SMS_ENABLED == 'true'
         run: |
           git fetch origin main
           git pull --rebase origin main || true
