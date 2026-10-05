@@ -1,9 +1,7 @@
 name: Good Night SMS
 on:
   schedule:
-    # 10:00 PM PH time = 14:00 UTC. Random delay below spreads the actual
-    # send across the 10:00-11:00 PM window.
-    - cron: '0 14 * * *'
+    - cron: '0 14 * * *'   # 10:00 PM PH
   workflow_dispatch: {}
 
 permissions:
@@ -21,10 +19,10 @@ jobs:
 
       - run: pip install requests
 
-      - name: Random delay (spreads the send across 10-11 PM)
+      - name: Random delay (up to 10 minutes)
         if: github.event_name == 'schedule' && vars.SMS_ENABLED == 'true'
         run: |
-          MINUTES=$(( RANDOM % 60 ))   # 0 to 59 minutes -> sometime 10:00-11:00 PM PH
+          MINUTES=$(( RANDOM % 11 ))
           echo "Sleeping $MINUTES minute(s) before sending"
           sleep "${MINUTES}m"
 
