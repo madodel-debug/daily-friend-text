@@ -51,11 +51,11 @@ DAYS_PER_WEEK = 3  # how many random weekdays get a lunch message
 GREETINGS = [
     "good afternoon hon!",
     "magandang hapon mahal!",
-    "good afternoon na mama!",
+    "good afternoon mama!",
     "kumain ka na ba, love?",
     "good afternoon love, lunch time na!",
     "magandang hapon, mahal! kumain ka na?",
-    "hey hon, good afternoon! lunch na ba?",
+    "Good afternoon! nag Lunch ka na hon",
     "magandang tanghali, mama!",
 ]
 
