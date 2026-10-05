@@ -1,9 +1,7 @@
 name: Good Night Apology (catch-up)
 on:
   schedule:
-    # 5:00 AM PH time = 21:00 UTC previous day. Sent well before the
-    # 5:30-8:00 AM good-morning window so the two never overlap.
-    - cron: '0 21 * * *'
+    - cron: '0 21 * * *'   # 5:00 AM PH
   workflow_dispatch:
     inputs:
       force_pending:
@@ -26,10 +24,10 @@ jobs:
 
       - run: pip install requests
 
-      - name: Random delay (spreads the send across 5:00-5:15 AM)
+      - name: Random delay (up to 10 minutes)
         if: github.event_name == 'schedule' && vars.SMS_ENABLED == 'true'
         run: |
-          MINUTES=$(( RANDOM % 15 ))   # 0 to 14 minutes, stays well clear of 5:30
+          MINUTES=$(( RANDOM % 11 ))
           echo "Sleeping $MINUTES minute(s) before checking"
           sleep "${MINUTES}m"
 
