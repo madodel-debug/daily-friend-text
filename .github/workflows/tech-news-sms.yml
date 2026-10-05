@@ -1,0 +1,46 @@
+name: Tech News SMS
+on:
+  schedule:
+    - cron: '0 0 * * *'   # 8:00 AM PH time (00:00 UTC)
+  workflow_dispatch:
+    inputs:
+      test_day_index:
+        description: 'Optional: force a theme, 0=Renewable..8=New Tech'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - run: pip install requests
+
+      - name: Random delay (up to 10 minutes)
+        if: github.event_name == 'schedule' && vars.SMS_ENABLED == 'true'
+        run: |
+          MINUTES=$(( RANDOM % 11 ))
+          echo "Sleeping $MINUTES minute(s) before sending"
+          sleep "${MINUTES}m"
+
+      - name: Send tech news SMS
+        if: vars.SMS_ENABLED == 'true'
+        run: python send_tech_news_sms.py
+        env:
+          SMSGATEWAY_LOGIN: ${{ secrets.SMSGATEWAY_LOGIN }}
+          SMSGATEWAY_PASSWORD: ${{ secrets.SMSGATEWAY_PASSWORD }}
+          TECH_NEWS_RECIPIENT_NUMBER: ${{ secrets.TECH_NEWS_RECIPIENT_NUMBER }}
+          TECH_NEWS_API_KEY: ${{ secrets.TECH_NEWS_API_KEY }}
+          TEST_DAY_INDEX: ${{ github.event.inputs.test_day_index }}
+
+      - name: Skipped (kill switch off)
+        if: vars.SMS_ENABLED != 'true'
+        run: echo "::warning::SMS sending is disabled (SMS_ENABLED is not 'true'). Nothing was sent."
