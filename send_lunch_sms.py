@@ -2,14 +2,14 @@
 send_lunch_sms.py
 
 Sends a "good afternoon" + food/healthy-eating message as a real SMS,
-on exactly 2 random weekdays each week (Mon-Fri), picked automatically.
+on exactly 3 random weekdays each week (Mon-Fri), picked automatically.
 
-HOW THE "2 RANDOM DAYS A WEEK" PART WORKS:
+HOW THE "3 RANDOM DAYS A WEEK" PART WORKS:
 This workflow runs every weekday at lunchtime, but the script itself
-decides whether TODAY is actually one of this week's 2 chosen days.
-The 2 days are picked using the current ISO week number as a random seed,
-so every run during the same week computes the SAME 2 days without
-needing to remember anything between runs — and a different 2 days get
+decides whether TODAY is actually one of this week's 3 chosen days.
+The 3 days are picked using the current ISO week number as a random seed,
+so every run during the same week computes the SAME 3 days without
+needing to remember anything between runs — and a different 3 days get
 picked automatically next week.
 
 SETUP:
@@ -45,7 +45,7 @@ DRY_RUN = os.environ.get("DRY_RUN", "").strip() == "1"
 # histories (different keys, no overlap).
 STATE_FILE = os.environ.get("STATE_FILE", "sent_state.json")
 
-DAYS_PER_WEEK = 2  # how many random weekdays get a lunch message
+DAYS_PER_WEEK = 3  # how many random weekdays get a lunch message
 
 # ---- Good afternoon greetings: mix of Taglish, English, Filipino ----
 GREETINGS = [
@@ -116,7 +116,7 @@ def iso_week_seed(now):
 
 
 def this_weeks_chosen_days(now):
-    """Deterministically pick which 2 weekdays (0=Mon..4=Fri) get a lunch
+    """Deterministically pick which 3 weekdays (0=Mon..4=Fri) get a lunch
     message this week, based on the ISO week number. Same result every
     time it's computed during the same week; different next week."""
     rng = random.Random(iso_week_seed(now))
