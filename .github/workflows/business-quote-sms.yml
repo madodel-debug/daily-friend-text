@@ -1,8 +1,7 @@
 name: Business Quote SMS
 on:
   schedule:
-    # 7:00 AM PH time = 23:00 UTC previous day.
-    - cron: '0 23 * * *'
+    - cron: '0 23 * * *'   # 7:00 AM PH
   workflow_dispatch:
     inputs:
       force_fallback:
@@ -25,10 +24,10 @@ jobs:
 
       - run: pip install requests
 
-      - name: Random delay (spreads the send across 7:00-7:30 AM)
+      - name: Random delay (up to 10 minutes)
         if: github.event_name == 'schedule' && vars.SMS_ENABLED == 'true'
         run: |
-          MINUTES=$(( RANDOM % 30 ))   # 0 to 29 minutes
+          MINUTES=$(( RANDOM % 11 ))
           echo "Sleeping $MINUTES minute(s) before sending"
           sleep "${MINUTES}m"
 
