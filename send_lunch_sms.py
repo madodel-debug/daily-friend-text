@@ -64,11 +64,11 @@ LUNCH_MESSAGES = [
     "kumain ka ha, wag mong laktawan lunch mo.",
     "sana may gulay sa plato mo today, para balanced.",
     "try ko yung sinigang recipe mo ulit minsan, miss ko na yung asim.",
-    "protina, gulay, kanin, tapos tubig - simple lang pero sapat na.",
+    "protina, gulay, kanin, tapos tubig - para balanse.",
     "wag puro rice, dagdagan mo gulay konti ha.",
     "sana masarap lunch mo today, kumain ka ng tama.",
     "ubusin mo tubig mo bago ka kumain, nakakatulong sa digestion.",
-    "kung may oras, mag-ensalada ka konti, pampasigla.",
+    "kung may oras, mag-ensalada ka na may ampalaya, pampasigla.",
     "miss ko magluto para sa'yo, soon ulit.",
     "wag mo kalimutan prutas mo later, apple or banana okay lang.",
     "kumain ka ng tama ha, wag puro kape lang.",
@@ -79,8 +79,8 @@ LUNCH_MESSAGES = [
     "sana may protina ka sa lunch mo, para hindi ka mabilis magutom.",
     "kumain ka ng masarap, deserve mo today.",
     "wag mo rin kalimutan mag-stretch bago bumalik sa work pagkatapos kumain.",
-    "sana masaya lunch mo, kahit mag-isa ka lang kumain.",
-    "miss ko kumain kasama ka, next time ulit.",
+    "sana masaya lunch mo.",
+    "miss ko na kumain kasama ka.",
     # ---- Workout / movement reminders (lunchtime-friendly) ----
     "after lunch, try mong maglakad kahit 5-10 minutes lang, nakakatulong sa digestion at energy.",
     "kung may oras, konting stretch after kumain, pampagaan ng pakiramdam.",
@@ -96,7 +96,6 @@ LUNCH_MESSAGES = [
 # ---- Cheat day / reward messages. Sent rarely, not every lunch day. ----
 CHEAT_DAY_MESSAGES = [
     "okay lang mag-cheat day minsan ha, deserve mo rin mag-enjoy sa kinakain mo.",
-    "sige, bahala ka na sa lunch mo today, kumain ka ng gusto mo, ikaw bahala magdesisyon.",
     "reward mo sarili mo today, kumain ka ng paborito mo, wag kang maramdam guilty.",
     "hindi lahat ng araw kailangan strict, minsan okay lang mag-indulge, balance lang.",
     "you've been consistent lately, treat mo sarili mo ng masarap today, deserve mo.",
