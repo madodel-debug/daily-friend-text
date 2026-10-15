@@ -216,8 +216,9 @@
   "lunch_cheat": [
     "you've been consistent lately, treat mo sarili mo ng masarap today, deserve mo."
   ],
-  "missed_pending": true,
+  "missed_pending": false,
   "goodnight_apology": [
+    "Sorry, gising agad ako, naalala ko kasi nalimutan ko goodnight mo kagabi. nandito pa rin ako lagi, promise.",
     "Nakalimutan kong mag-goodnight kagabi. sorry, antok na antok ata ako kagabi. miss kita."
   ]
 }
