@@ -1,7 +1,7 @@
 name: Lunch SMS (3 random weekdays)
 on:
   schedule:
-    - cron: '30 3 * * 1-5'   # 11:30 AM PH, Mon-Fri
+    - cron: '30 2 * * 1-5'   # 10:30 AM PH, Mon-Fri
   workflow_dispatch:
     inputs:
       test_weekday:
