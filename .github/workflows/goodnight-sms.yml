@@ -1,7 +1,7 @@
 name: Good Night SMS
 on:
   schedule:
-    - cron: '0 14 * * *'   # 10:00 PM PH
+    - cron: '0 12 * * *'   # 8:00 PM PH
   workflow_dispatch: {}
 
 permissions:
