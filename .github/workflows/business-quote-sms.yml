@@ -1,7 +1,7 @@
 name: Business Quote SMS
 on:
   schedule:
-    - cron: '0 23 * * *'   # 7:00 AM PH
+    - cron: '0 21 * * *'   # 5:00 AM PH
   workflow_dispatch:
     inputs:
       force_fallback:
