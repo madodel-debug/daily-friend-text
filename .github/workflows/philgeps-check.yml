@@ -1,7 +1,7 @@
 name: PhilGEPS Watch (RE / Disaster / Data Centers)
 on:
   schedule:
-    - cron: '0 1 * * *'   # 9:00 AM PH time
+    - cron: '0 1 * * 1'   # Mondays, 9:00 AM PH time
   workflow_dispatch: {}
 
 permissions:
