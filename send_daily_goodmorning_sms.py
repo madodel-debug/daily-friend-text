@@ -9,6 +9,7 @@ FEATURES:
   - No-repeat memory (state file remembers what's been sent)
   - Day-of-week themes (Mon=gym, Tue=work, Wed=kids, Thu=health,
     Fri=mental health, Sat=inspiring, Sun=love)
+  - 2 random days per week are just a simple good morning (no themed message)
   - Short & sweet only (all messages under ~160 chars)
   - Husband voice, randomized endearments: hon / mama / mahal / love
   - Famous quotes paraphrased naturally, name often AFTER the quote
@@ -40,6 +41,11 @@ SMSGATEWAY_URL = "https://api.sms-gate.app/3rdparty/v1/messages"
 BIRTHDAYS = os.environ.get("BIRTHDAYS", "")
 TEST_DATE = os.environ.get("TEST_DATE", "").strip()
 DRY_RUN = os.environ.get("DRY_RUN", "").strip() == "1"
+
+# ---- Simple good morning days ----
+SIMPLE_DAYS_PER_WEEK = 2
+# Optional: force specific weekdays (Mon=0 ... Sun=6), e.g. SIMPLE_DAYS="2,5"
+SIMPLE_DAYS_OVERRIDE = os.environ.get("SIMPLE_DAYS", "").strip()
 
 # ---- No-repeat memory ----
 STATE_FILE = os.environ.get("STATE_FILE", "sent_state.json")
@@ -123,7 +129,7 @@ MESSAGES_KIDS = [
     "ang mga bata swerte sa'yo, ikaw pinakamagandang mama.",
     "palapit nang palapit tayo sa pagsasama ulit, kapit lang.",
     "mahal na mahal ka ng mga bata, alam mo 'yon.",
-    "sabihin mo sa mga bata mahal sila ni daddy.",
+    "sabihin mo sa mga bata mahal sila ni papa.",
     "ikaw puso ng pamilya natin, miss kita.",
     "mahirap maging mama, pero ginagawa mong madali.",
     "miss na miss ko kayong tatlo.",
@@ -215,15 +221,14 @@ MESSAGES_INSPIRING = [
 ]
 
 MESSAGES_LOVE = [
-    "ikaw agad naisip ko pagkagising, araw-araw ganito.",
-    "miss na miss kita, sana nandiyan ka lang.",
-    "mahal na mahal kita, walang dahilan kailangan.",
+    "ikaw agad naisip ko pagkagising",
+    "miss na miss kita",
+    "mahal na mahal kita",
     "kahit malayo ka, ramdam ko yakap mo.",
     "ikaw pa rin pinakamaganda para sa akin.",
     "araw-araw kitang pipiliin, walang duda.",
     "nandito lang ako palagi, kapit lang.",
     "sana maramdaman mo kung gaano kita kamahal.",
-    "mahirap magmahal ng malayo, pero sa'yo madali lang.",
     "mahal kita, sobra, lagi, palagi.",
     "miss kita, mahal kita.",
     "ikaw lang, lagi.",
@@ -251,6 +256,15 @@ THEME_NAMES = {
 
 def today_in_manila():
     return datetime.now(timezone(timedelta(hours=8)))
+
+
+def simple_days_this_week(now):
+    """Returns the set of weekdays (Mon=0..Sun=6) that get a plain good morning."""
+    if SIMPLE_DAYS_OVERRIDE:
+        return {int(d) for d in SIMPLE_DAYS_OVERRIDE.split(",") if d.strip().isdigit()}
+    iso_year, iso_week, _ = now.isocalendar()
+    rng = random.Random(f"{iso_year}-W{iso_week}")  # same picks all week
+    return set(rng.sample(range(7), SIMPLE_DAYS_PER_WEEK))
 
 
 def is_leap(year):
@@ -349,13 +363,20 @@ def send_message():
     daily_numbers = [n for n in daily_numbers if n not in birthday_numbers]
 
     if daily_numbers:
-        weekday = today_in_manila().weekday()
-        pool = THEMES[weekday]
-        theme_key = THEME_NAMES[weekday]
-        body = pick_unused(theme_key, pool, state)
-        greeting = random.choice(GREETINGS)
-        full_message = decorate(body, greeting)
-        print(f"Today's theme: {theme_key}")
+        now = today_in_manila()
+        weekday = now.weekday()
+
+        if weekday in simple_days_this_week(now):
+            full_message = random.choice(GREETINGS)
+            print("Today's theme: simple good morning")
+        else:
+            pool = THEMES[weekday]
+            theme_key = THEME_NAMES[weekday]
+            body = pick_unused(theme_key, pool, state)
+            greeting = random.choice(GREETINGS)
+            full_message = decorate(body, greeting)
+            print(f"Today's theme: {theme_key}")
+
         send(daily_numbers, full_message)
     else:
         print("No one left for the regular good morning message today.")
