@@ -1,7 +1,9 @@
 name: Business Quote SMS
 on:
   schedule:
-    - cron: '0 21 * * *'   # 5:00 AM PH
+    # Start ~20 minutes EARLY so GitHub's scheduler lag doesn't make us late.
+    # The wait step below holds until 5:00 AM PH.
+    - cron: '40 20 * * *'   # starts 4:40 AM PH, sends ~5:00 AM
   workflow_dispatch:
     inputs:
       force_fallback:
@@ -24,12 +26,20 @@ jobs:
 
       - run: pip install requests
 
-      - name: Random delay (up to 10 minutes)
+      - name: Wait until 5:00 AM PH (plus 0-10 min jitter)
         if: github.event_name == 'schedule' && vars.SMS_ENABLED == 'true'
         run: |
-          MINUTES=$(( RANDOM % 11 ))
-          echo "Sleeping $MINUTES minute(s) before sending"
-          sleep "${MINUTES}m"
+          export TZ=Asia/Manila
+          NOW=$(date +%s)
+          TARGET_TS=$(date -d "$(date +%F) 05:00" +%s)
+          JITTER=$(( RANDOM % 601 ))   # 0 to 10 minutes, in seconds
+          WAIT=$(( TARGET_TS - NOW + JITTER ))
+          if [ "$WAIT" -gt 0 ]; then
+            echo "Waiting $WAIT second(s) until 05:00 (+jitter)"
+            sleep "$WAIT"
+          else
+            echo "Already past 05:00, sending right away"
+          fi
 
       - name: Send business quote SMS
         if: vars.SMS_ENABLED == 'true'
