@@ -1,7 +1,9 @@
 name: Lunch SMS (3 random weekdays)
 on:
   schedule:
-    - cron: '30 2 * * 1-5'   # 10:30 AM PH, Mon-Fri
+    # Start ~20 minutes EARLY so GitHub's scheduler lag doesn't make us late.
+    # The wait step below holds until 10:30 AM PH.
+    - cron: '10 2 * * 1-5'   # starts 10:10 AM PH, sends ~10:30 AM, Mon-Fri
   workflow_dispatch:
     inputs:
       test_weekday:
@@ -28,12 +30,20 @@ jobs:
 
       - run: pip install requests
 
-      - name: Random delay (up to 10 minutes)
+      - name: Wait until 10:30 AM PH (plus 0-10 min jitter)
         if: github.event_name == 'schedule' && vars.SMS_ENABLED == 'true'
         run: |
-          MINUTES=$(( RANDOM % 11 ))
-          echo "Sleeping $MINUTES minute(s) before checking/sending"
-          sleep "${MINUTES}m"
+          export TZ=Asia/Manila
+          NOW=$(date +%s)
+          TARGET_TS=$(date -d "$(date +%F) 10:30" +%s)
+          JITTER=$(( RANDOM % 601 ))   # 0 to 10 minutes, in seconds
+          WAIT=$(( TARGET_TS - NOW + JITTER ))
+          if [ "$WAIT" -gt 0 ]; then
+            echo "Waiting $WAIT second(s) until 10:30 (+jitter)"
+            sleep "$WAIT"
+          else
+            echo "Already past 10:30, sending right away"
+          fi
 
       - name: Send lunch SMS
         if: vars.SMS_ENABLED == 'true'
