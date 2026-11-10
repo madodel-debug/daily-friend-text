@@ -1,8 +1,10 @@
 name: Daily Good Morning SMS
 on:
   schedule:
-    - cron: '30 21 * * 0-4'   # 5:30 AM PH, Mon-Fri (UTC Sun-Thu)
-    - cron: '0 22 * * 5,6'    # 6:00 AM PH, Sat-Sun (UTC Fri-Sat)
+    # Start ~20 minutes EARLY so GitHub's scheduler lag doesn't make us late.
+    # The "Wait until target time" step below holds until the real send time.
+    - cron: '10 21 * * 0-4'   # starts 5:10 AM PH, sends ~5:30 AM (Mon-Fri)
+    - cron: '40 21 * * 5,6'   # starts 5:40 AM PH, sends ~6:00 AM (Sat-Sun)
   workflow_dispatch:
     inputs:
       test_date:
@@ -25,12 +27,22 @@ jobs:
 
       - run: pip install requests
 
-      - name: Random delay (up to 10 minutes)
+      - name: Wait until target time (plus 0-3 min jitter)
         if: github.event_name == 'schedule' && vars.SMS_ENABLED == 'true'
         run: |
-          MINUTES=$(( RANDOM % 11 ))   # 0 to 10 minutes
-          echo "Sleeping $MINUTES minute(s) before sending"
-          sleep "${MINUTES}m"
+          export TZ=Asia/Manila
+          DOW=$(date +%u)   # 1=Mon ... 7=Sun, in Manila time
+          if [ "$DOW" -ge 6 ]; then TARGET="06:00"; else TARGET="05:30"; fi
+          NOW=$(date +%s)
+          TARGET_TS=$(date -d "$(date +%F) $TARGET" +%s)
+          JITTER=$(( RANDOM % 181 ))   # 0 to 3 minutes, in seconds
+          WAIT=$(( TARGET_TS - NOW + JITTER ))
+          if [ "$WAIT" -gt 0 ]; then
+            echo "Waiting $WAIT second(s) until $TARGET (+jitter)"
+            sleep "$WAIT"
+          else
+            echo "Already past $TARGET, sending right away"
+          fi
 
       - name: Send good morning SMS
         if: vars.SMS_ENABLED == 'true'
