@@ -4,13 +4,17 @@ send_lunch_sms.py
 Sends a "good afternoon" + food/healthy-eating message as a real SMS,
 on exactly 3 random weekdays each week (Mon-Fri), picked automatically.
 
+Of those 3 lunch days, 2 are just a simple good afternoon (greeting only)
+and the remaining one gets the full greeting + message format.
+
 HOW THE "3 RANDOM DAYS A WEEK" PART WORKS:
 This workflow runs every weekday at lunchtime, but the script itself
 decides whether TODAY is actually one of this week's 3 chosen days.
 The 3 days are picked using the current ISO week number as a random seed,
 so every run during the same week computes the SAME 3 days without
 needing to remember anything between runs — and a different 3 days get
-picked automatically next week.
+picked automatically next week. The simple-greeting days are picked the
+same way, from within the 3 chosen days.
 
 SETUP:
   Same SMSGATEWAY_LOGIN / SMSGATEWAY_PASSWORD / RECIPIENT_PHONE_NUMBER
@@ -46,6 +50,12 @@ DRY_RUN = os.environ.get("DRY_RUN", "").strip() == "1"
 STATE_FILE = os.environ.get("STATE_FILE", "sent_state.json")
 
 DAYS_PER_WEEK = 3  # how many random weekdays get a lunch message
+
+# ---- Simple good afternoon days ----
+# How many of this week's lunch days are just a greeting (no extra message).
+SIMPLE_DAYS_PER_WEEK = 2
+# Optional: force specific weekdays (Mon=0 ... Fri=4), e.g. SIMPLE_DAYS="1,3"
+SIMPLE_DAYS_OVERRIDE = os.environ.get("SIMPLE_DAYS", "").strip()
 
 # ---- Good afternoon greetings: mix of Taglish, English, Filipino ----
 GREETINGS = [
@@ -120,6 +130,17 @@ def this_weeks_chosen_days(now):
     time it's computed during the same week; different next week."""
     rng = random.Random(iso_week_seed(now))
     return set(rng.sample(range(5), DAYS_PER_WEEK))
+
+
+def this_weeks_simple_days(now, chosen_days):
+    """Of this week's chosen lunch days, pick which ones get a plain good
+    afternoon (greeting only). Also seeded by the week, so it stays the
+    same all week."""
+    if SIMPLE_DAYS_OVERRIDE:
+        return {int(d) for d in SIMPLE_DAYS_OVERRIDE.split(",") if d.strip().isdigit()}
+    rng = random.Random(iso_week_seed(now) + "-simple")
+    count = min(SIMPLE_DAYS_PER_WEEK, len(chosen_days))
+    return set(rng.sample(sorted(chosen_days), count))
 
 
 def load_state():
@@ -206,8 +227,10 @@ def send_message():
     now = today_in_manila()
     weekday = int(TEST_WEEKDAY) if TEST_WEEKDAY else now.weekday()
     chosen_days = this_weeks_chosen_days(now)
+    simple_days = this_weeks_simple_days(now, chosen_days)
 
     print(f"This week's chosen lunch days (0=Mon..4=Fri): {sorted(chosen_days)}")
+    print(f"Of those, simple good afternoon days: {sorted(simple_days)}")
     print(f"Today is weekday {weekday}")
 
     if weekday > 4:
@@ -226,14 +249,22 @@ def send_message():
     state = load_state()
 
     greeting = random.choice(GREETINGS)
-    # Cheat day messages show up occasionally, not as the default.
-    CHEAT_DAY_CHANCE = 0.15  # roughly 1 in 7 lunch messages
-    if random.random() < CHEAT_DAY_CHANCE:
-        print("Picked a cheat-day message today.")
-        body = pick_unused("lunch_cheat", CHEAT_DAY_MESSAGES, state)
+
+    if weekday in simple_days:
+        # Simple good afternoon: greeting only, nothing used up in the
+        # no-repeat memory.
+        print("Today's theme: simple good afternoon")
+        text = greeting
     else:
-        body = pick_unused("lunch", LUNCH_MESSAGES, state)
-    text = f"{greeting} {body}" if random.random() < 0.5 else f"{body} {greeting}"
+        # Cheat day messages show up occasionally, not as the default.
+        CHEAT_DAY_CHANCE = 0.15  # roughly 1 in 7 lunch messages
+        if random.random() < CHEAT_DAY_CHANCE:
+            print("Picked a cheat-day message today.")
+            body = pick_unused("lunch_cheat", CHEAT_DAY_MESSAGES, state)
+        else:
+            body = pick_unused("lunch", LUNCH_MESSAGES, state)
+        text = f"{greeting} {body}" if random.random() < 0.5 else f"{body} {greeting}"
+
     text = humanize(text)
     send(numbers, text)
     save_state(state)
