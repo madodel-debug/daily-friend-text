@@ -7,6 +7,9 @@ Taglish/English/Filipino greeting + a message, no-repeat memory shared
 with the other scripts' sent_state.json, and a small (1-3%) humanizing
 typo/word-swap once in a while.
 
+2 random days per week are just a simple good night (greeting only, no
+extra message). The other days use the normal greeting + message format.
+
 SETUP:
   Same SMSGATEWAY_LOGIN / SMSGATEWAY_PASSWORD / RECIPIENT_PHONE_NUMBER
   secrets as the other scripts. No extra setup needed if you're already
@@ -16,11 +19,14 @@ Optional env vars for testing:
   FORCE_SEND=1   (kept for consistency with the other scripts; this script
                   always sends when run, so this has no effect here)
   DRY_RUN=1      print instead of sending
+  SIMPLE_DAYS    force specific weekdays for the simple good night
+                 (Mon=0 ... Sun=6), e.g. SIMPLE_DAYS="2,5"
 """
 
 import json
 import os
 import random
+from datetime import datetime, timedelta, timezone
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -32,6 +38,11 @@ RECIPIENT_PHONE_NUMBER = os.environ.get("RECIPIENT_PHONE_NUMBER")
 SMSGATEWAY_URL = "https://api.sms-gate.app/3rdparty/v1/messages"
 
 DRY_RUN = os.environ.get("DRY_RUN", "").strip() == "1"
+
+# ---- Simple good night days ----
+SIMPLE_DAYS_PER_WEEK = 2
+# Optional: force specific weekdays (Mon=0 ... Sun=6), e.g. SIMPLE_DAYS="2,5"
+SIMPLE_DAYS_OVERRIDE = os.environ.get("SIMPLE_DAYS", "").strip()
 
 # Same state file the other scripts use, so one file tracks every
 # category's history (different keys, no overlap).
@@ -53,7 +64,7 @@ GREETINGS = [
 NIGHT_MESSAGES = [
     "matulog ka na ha, mahal kita.",
     "ingat sa pagtulog, sana magandang panaginip mo.",
-    "miss na miss kita, sana mapanag-inipan kita.",
+    "miss na miss kita, sana mapanaginipan kita.",
     "busy araw natin today, rest ka na ng maayos.",
     "wag ka na mag-phone ng matagal, para makatulog ka agad.",
     "proud ako sayo, tulog na.",
@@ -76,6 +87,18 @@ NIGHT_MESSAGES = [
 # ---- Chance of silently skipping a goodnight (feels human, not robotic) ----
 MISS_CHANCE = 0.08  # roughly 1 in 12 nights
 
+
+def today_in_manila():
+    return datetime.now(timezone(timedelta(hours=8)))
+
+
+def simple_days_this_week(now):
+    """Returns the set of weekdays (Mon=0..Sun=6) that get a plain good night."""
+    if SIMPLE_DAYS_OVERRIDE:
+        return {int(d) for d in SIMPLE_DAYS_OVERRIDE.split(",") if d.strip().isdigit()}
+    iso_year, iso_week, _ = now.isocalendar()
+    rng = random.Random(f"{iso_year}-W{iso_week}")  # same picks all week
+    return set(rng.sample(range(7), SIMPLE_DAYS_PER_WEEK))
 
 
 def load_state():
@@ -174,9 +197,18 @@ def send_message():
         save_state(state)
         return
 
+    now = today_in_manila()
     greeting = random.choice(GREETINGS)
-    body = pick_unused("goodnight", NIGHT_MESSAGES, state)
-    text = f"{greeting} {body}" if random.random() < 0.5 else f"{body} {greeting}"
+
+    if now.weekday() in simple_days_this_week(now):
+        # Simple good night: greeting only, no extra message, and
+        # nothing used up in the no-repeat memory.
+        text = greeting
+        print("Today's theme: simple good night")
+    else:
+        body = pick_unused("goodnight", NIGHT_MESSAGES, state)
+        text = f"{greeting} {body}" if random.random() < 0.5 else f"{body} {greeting}"
+
     text = humanize(text)
     send(numbers, text)
     save_state(state)
