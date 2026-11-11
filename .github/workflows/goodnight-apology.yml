@@ -18,16 +18,31 @@ jobs:
   send:
     runs-on: ubuntu-latest
     steps:
+      - name: Check monthly pause (2nd week = 8th to 14th)
+        id: pause
+        run: |
+          export TZ=Asia/Manila
+          DAY=$((10#$(date +%d)))
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$DAY" -ge 8 ] && [ "$DAY" -le 14 ]; then
+            echo "paused=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Paused: day $DAY falls in the 2nd week of the month (8th-14th). Nothing will be sent."
+          else
+            echo "paused=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.pause.outputs.paused != 'true'
 
       - uses: actions/setup-python@v5
+        if: steps.pause.outputs.paused != 'true'
         with:
           python-version: '3.x'
 
       - run: pip install requests
+        if: steps.pause.outputs.paused != 'true'
 
       - name: Wait until 5:00 AM PH (plus 0-10 min jitter)
-        if: github.event_name == 'schedule' && vars.SMS_ENABLED == 'true'
+        if: github.event_name == 'schedule' && vars.SMS_ENABLED == 'true' && steps.pause.outputs.paused != 'true'
         run: |
           export TZ=Asia/Manila
           NOW=$(date +%s)
@@ -42,7 +57,7 @@ jobs:
           fi
 
       - name: Check and send apology if needed
-        if: vars.SMS_ENABLED == 'true'
+        if: vars.SMS_ENABLED == 'true' && steps.pause.outputs.paused != 'true'
         run: python send_goodnight_apology.py
         env:
           SMSGATEWAY_LOGIN: ${{ secrets.SMSGATEWAY_LOGIN }}
@@ -55,7 +70,7 @@ jobs:
         run: echo "::warning::SMS sending is disabled (SMS_ENABLED is not 'true'). Nothing was sent."
 
       - name: Save state back to the repo
-        if: vars.SMS_ENABLED == 'true'
+        if: vars.SMS_ENABLED == 'true' && steps.pause.outputs.paused != 'true'
         run: |
           git fetch origin main
           git pull --rebase origin main || true
