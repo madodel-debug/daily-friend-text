@@ -19,12 +19,16 @@ jobs:
   send:
     runs-on: ubuntu-latest
     steps:
-      - name: Check monthly pause (2nd week = 8th to 14th)
+      - name: Check monthly pause (8th-14th, except Feb 14)
         id: pause
         run: |
           export TZ=Asia/Manila
           DAY=$((10#$(date +%d)))
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$DAY" -ge 8 ] && [ "$DAY" -le 14 ]; then
+          MONTH=$((10#$(date +%m)))
+          if [ "$MONTH" -eq 2 ] && [ "$DAY" -eq 14 ]; then
+            echo "paused=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Feb 14 is exempt from the monthly pause. Sending as normal."
+          elif [ "${{ github.event_name }}" = "schedule" ] && [ "$DAY" -ge 8 ] && [ "$DAY" -le 14 ]; then
             echo "paused=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Paused: day $DAY falls in the 2nd week of the month (8th-14th). Nothing will be sent."
           else
