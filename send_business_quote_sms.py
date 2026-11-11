@@ -35,6 +35,7 @@ Optional env vars for testing:
 import json
 import os
 import random
+from datetime import datetime, timedelta, timezone
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -50,6 +51,7 @@ API_CATEGORIES = ["business", "leadership", "success", "money"]
 
 DRY_RUN = os.environ.get("DRY_RUN", "").strip() == "1"
 FORCE_FALLBACK = os.environ.get("FORCE_FALLBACK", "").strip() == "1"
+TEST_DATE = os.environ.get("TEST_DATE", "").strip()  # MM-DD, for testing
 
 STATE_FILE = os.environ.get("STATE_FILE", "sent_state.json")
 
@@ -591,7 +593,64 @@ FALLBACK_QUOTES = [
 "Machiavelli on advisors: a leader should invite honest counsel from a few trusted people and be firm about when advice is wanted, or flattery will fill the space.",
 "Pixar's candor lesson: early versions of every film were reportedly rough, and its regular frank reviews worked because criticism targeted the work, not the people.",
 "Southwest and focus: the airline long built its advantage on a few simple choices - one plane type, fast turnarounds - that every other decision was designed to protect.",
-"Netflix's culture idea: pay top of market, give context instead of control, and let people leave if they don't fit - a bet that high talent density removes the need for rules."
+"Netflix's culture idea: pay top of market, give context instead of control, and let people leave if they don't fit - a bet that high talent density removes the need for rules.",
+  # ---- Holiday days (Manila time, MM-DD) ----
+HOLIDAY_DATES = {
+    "12-24": "christmas",
+    "12-25": "christmas",
+    "12-31": "newyear",
+    "01-01": "newyear",
+}
+
+CHRISTMAS_GREETINGS = [
+    "Merry Christmas!",
+    "Maligayang Pasko!",
+    "Merry Christmas, and thank you for the year!",
+    "Maligayang Pasko po! Enjoy the season.",
+]
+
+NEW_YEAR_GREETINGS = [
+    "Happy New Year!",
+    "Manigong Bagong Taon!",
+    "Wishing you a Happy New Year!",
+    "Manigong Bagong Taon po! Here's to a strong year ahead.",
+]
+
+CHRISTMAS_QUOTES = [
+    "Leadership thought for Christmas: thanks said to a team before the year ends is remembered longer than any bonus announcement.",
+    "Year-end reminder: the best gift a leader can give a team is clarity - knowing what matters next year lets everyone rest properly now.",
+    "Christmas and strategy: the holidays are a good time to step back, because distance often shows what the busy months hid.",
+    "Generosity pays off in business too - the people you helped this year are often the ones who open doors for you next year.",
+    "A good leader uses the holidays to say thank you in specific terms - name the work and name the person, not just 'good job'.",
+    "Marcus Aurelius on the present: give full attention to what's in front of you - being truly present with the people around you is the best use of this season.",
+    "Rest is part of the strategy - real sleep, family, and a proper break make January's decisions sharper.",
+    "Scrooge's lesson, business edition: a company that only counts money misses the value of the people who earn it.",
+    "The holiday season teaches a pricing lesson too: people pay for meaning and thoughtfulness, not just for the item itself.",
+    "Close the year by finishing one thing you've been putting off - nothing starts the new year lighter.",
+]
+
+NEW_YEAR_QUOTES = [
+    "New Year thought: set fewer goals and attach a simple system to each one - habits carry you when motivation fades by February.",
+    "Before planning next year, review this one honestly - write down three wins, three misses, and one lesson from each.",
+    "A new year doesn't change you, a clear weekly routine does - treat January 1st as a start date, not a miracle.",
+    "Resolution tip: make it specific and measurable - 'grow revenue by 15 percent' gives you something to act on, 'do better' doesn't.",
+    "Atomic Habits fits the new year: pick the kind of person you want to become first, then let small daily actions prove it.",
+    "Sun Tzu's point on preparation: campaigns are won in the planning - spend the first week of January planning your quarter, not just reacting to it.",
+    "Seneca on time: the year is a stock of hours you'll spend whether you plan or not, so decide on purpose where they go.",
+    "Start the year by cutting something - one meeting, one habit, one low-value commitment - before adding anything new.",
+    "Every strong year starts with a short list: your top three priorities, written down and checked weekly.",
+    "A fresh start is unwritten - the best businesses begin the year with curiosity instead of assumptions.",
+]
+
+
+def today_in_manila():
+    return datetime.now(timezone(timedelta(hours=8)))
+
+
+def todays_holiday():
+    key = TEST_DATE or today_in_manila().strftime("%m-%d")
+    return HOLIDAY_DATES.get(key)
+  
 ]
 
 
@@ -676,12 +735,24 @@ def send_message():
 
     state = load_state()
 
-    text = fetch_api_quote()
-    if text:
-        print("Using a fresh quote from the API.")
+    holiday = todays_holiday()
+    if holiday == "christmas":
+        greeting = random.choice(CHRISTMAS_GREETINGS)
+        quote = pick_unused("business_christmas", CHRISTMAS_QUOTES, state)
+        text = f"{greeting} {quote}"
+        print("Holiday message: Christmas.")
+    elif holiday == "newyear":
+        greeting = random.choice(NEW_YEAR_GREETINGS)
+        quote = pick_unused("business_newyear", NEW_YEAR_QUOTES, state)
+        text = f"{greeting} {quote}"
+        print("Holiday message: New Year.")
     else:
-        print("Using the local curated pool.")
-        text = pick_unused("business_quote_fallback", FALLBACK_QUOTES, state)
+        text = fetch_api_quote()
+        if text:
+            print("Using a fresh quote from the API.")
+        else:
+            print("Using the local curated pool.")
+            text = pick_unused("business_quote_fallback", FALLBACK_QUOTES, state)
 
     send(numbers, text)
     save_state(state)
