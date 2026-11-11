@@ -593,7 +593,8 @@ FALLBACK_QUOTES = [
 "Machiavelli on advisors: a leader should invite honest counsel from a few trusted people and be firm about when advice is wanted, or flattery will fill the space.",
 "Pixar's candor lesson: early versions of every film were reportedly rough, and its regular frank reviews worked because criticism targeted the work, not the people.",
 "Southwest and focus: the airline long built its advantage on a few simple choices - one plane type, fast turnarounds - that every other decision was designed to protect.",
-"Netflix's culture idea: pay top of market, give context instead of control, and let people leave if they don't fit - a bet that high talent density removes the need for rules.",
+"Netflix's culture idea: pay top of market, give context instead of control, and let people leave if they don't fit - a bet that high talent density removes the need for rules."
+]
   # ---- Holiday days (Manila time, MM-DD) ----
 HOLIDAY_DATES = {
     "12-24": "christmas",
@@ -640,7 +641,6 @@ NEW_YEAR_QUOTES = [
     "Start the year by cutting something - one meeting, one habit, one low-value commitment - before adding anything new.",
     "Every strong year starts with a short list: your top three priorities, written down and checked weekly.",
     "A fresh start is unwritten - the best businesses begin the year with curiosity instead of assumptions.",
-]
 
 
 def today_in_manila():
@@ -651,8 +651,6 @@ def todays_holiday():
     key = TEST_DATE or today_in_manila().strftime("%m-%d")
     return HOLIDAY_DATES.get(key)
   
-]
-
 
 def load_state():
     if os.path.exists(STATE_FILE):
