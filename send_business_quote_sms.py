@@ -641,7 +641,7 @@ NEW_YEAR_QUOTES = [
     "Start the year by cutting something - one meeting, one habit, one low-value commitment - before adding anything new.",
     "Every strong year starts with a short list: your top three priorities, written down and checked weekly.",
     "A fresh start is unwritten - the best businesses begin the year with curiosity instead of assumptions.",
-
+]
 
 def today_in_manila():
     return datetime.now(timezone(timedelta(hours=8)))
